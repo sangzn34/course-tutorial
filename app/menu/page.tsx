@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import React from "react";
 
 type MenuItem = {
@@ -15,7 +16,7 @@ type MenuItem = {
 
 const MenuPage = () => {
   const { data, isLoading, error } = useQuery<MenuItem[]>({
-    queryKey: ["menu"],
+    queryKey: ["menu", "products"],
     queryFn: () =>
       fetch("/api/menu").then((res) => {
         if (!res.ok) {
@@ -34,19 +35,27 @@ const MenuPage = () => {
   }
 
   return (
-    // 2 cards per row
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-      {data?.map((item) => (
-        <div key={item.id} className="border p-4 rounded mb-2">
-          <h2 className="text-xl font-bold">
-            {item.name} ({item.nameTh})
-          </h2>
-          <p>Category: {item.category}</p>
-          <p>Price: {item.price} THB</p>
-          <p>{item.description}</p>
-          <p>Available: {item.available ? "Yes" : "No"}</p>
-        </div>
-      ))}
+    <div className="p-10">
+      <Link
+        href="/menu/create"
+        className="p-2 border bg-blue-500 text-white rounded"
+      >
+        Create Product
+      </Link>
+      {/* 2 cards per row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+        {data?.map((item) => (
+          <div key={item.id} className="border p-4 rounded mb-2">
+            <h2 className="text-xl font-bold">
+              {item.name} ({item.nameTh})
+            </h2>
+            <p>Category: {item.category}</p>
+            <p>Price: {item.price} THB</p>
+            <p>{item.description}</p>
+            <p>Available: {item.available ? "Yes" : "No"}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
