@@ -59,6 +59,11 @@ const MenuPage = () => {
       >
         Create Product
       </Link>
+      <input
+        type="text"
+        placeholder="Search..."
+        className="p-2 border rounded"
+      />
       {/* 2 cards per row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
         {data?.map((item) => (
