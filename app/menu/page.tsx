@@ -1,11 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import React from "react";
 
 type MenuItem = {
-  id: number;
+  id: string;
   name: string;
   nameTh: string;
   category: string;
@@ -15,8 +15,8 @@ type MenuItem = {
 };
 
 const MenuPage = () => {
-  const { data, isLoading, error } = useQuery<MenuItem[]>({
-    queryKey: ["menu", "products"],
+  const { data, isLoading, error, refetch } = useQuery<MenuItem[]>({
+    queryKey: ["menu"],
     queryFn: () =>
       fetch("/api/menu").then((res) => {
         if (!res.ok) {
@@ -25,6 +25,23 @@ const MenuPage = () => {
         return res.json();
       }),
   });
+
+  const { mutateAsync } = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/product/${id}`, {
+        method: "DELETE",
+      }).then((res) => {
+        if (!res.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return res.json();
+      }),
+  });
+
+  const handleDelete = async (id: string) => {
+    await mutateAsync(id);
+    refetch();
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -53,6 +70,13 @@ const MenuPage = () => {
             <p>Price: {item.price} THB</p>
             <p>{item.description}</p>
             <p>Available: {item.available ? "Yes" : "No"}</p>
+            {/* button delete */}
+            <button
+              className="mt-2 p-2 border bg-red-500 text-white rounded"
+              onClick={() => handleDelete(item.id)}
+            >
+              Delete
+            </button>
           </div>
         ))}
       </div>
