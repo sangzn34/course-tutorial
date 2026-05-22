@@ -75,13 +75,22 @@ const MenuPage = () => {
             <p>Price: {item.price} THB</p>
             <p>{item.description}</p>
             <p>Available: {item.available ? "Yes" : "No"}</p>
-            {/* button delete */}
-            <button
-              className="mt-2 p-2 border bg-red-500 text-white rounded"
-              onClick={() => handleDelete(item.id)}
-            >
-              Delete
-            </button>
+            <div className="flex gap-2">
+              {/* button view */}
+              <Link
+                href={`/menu/${item.id}`}
+                className="mt-2 p-2 border bg-blue-500 text-white rounded"
+              >
+                View
+              </Link>
+              {/* button delete */}
+              <button
+                className="mt-2 p-2 border bg-red-500 text-white rounded"
+                onClick={() => handleDelete(item.id)}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
