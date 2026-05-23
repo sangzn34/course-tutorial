@@ -1,8 +1,9 @@
 "use client";
 
+import { addToCartAtom } from "@/lib/cart";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useSetAtom } from "jotai/react";
 import Link from "next/link";
-import React from "react";
 
 type MenuItem = {
   id: string;
@@ -42,6 +43,8 @@ const MenuPage = () => {
     await mutateAsync(id);
     refetch();
   };
+
+  const addToCart = useSetAtom(addToCartAtom);
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -89,6 +92,20 @@ const MenuPage = () => {
                 onClick={() => handleDelete(item.id)}
               >
                 Delete
+              </button>
+              {/* button add cart */}
+              <button
+                className="mt-2 p-2 border bg-green-500 text-white rounded"
+                onClick={() =>
+                  addToCart({
+                    productId: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: 1,
+                  })
+                }
+              >
+                Add to Cart
               </button>
             </div>
           </div>

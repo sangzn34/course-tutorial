@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 const MenuDetail = () => {
   const { id } = useParams();
@@ -52,9 +53,11 @@ const MenuDetail = () => {
     try {
       await mutateAsync(data);
       console.log("Product updated successfully");
+      toast.success("Product updated");
       queryClient.invalidateQueries({ queryKey: ["menu"] });
     } catch (error) {
       console.error("Error updating product:", error);
+      toast.error("Failed to update product");
     }
   };
 

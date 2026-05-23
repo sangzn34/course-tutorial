@@ -4,6 +4,7 @@ import { Product } from "@/lib/generated/prisma/browser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 const MenuCreate = () => {
   const { register, handleSubmit } = useForm<Product>();
@@ -30,10 +31,12 @@ const MenuCreate = () => {
     try {
       const newProduct = await mutateAsync(data);
       console.log("Product created:", newProduct);
+      toast.success("Product created");
       queryClient.invalidateQueries({ queryKey: ["menu"] });
       router.push("/menu");
     } catch (error) {
       console.error("Error creating product:", error);
+      toast.error("Failed to create product");
     }
   };
 
