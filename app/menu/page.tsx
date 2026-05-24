@@ -1,5 +1,6 @@
 "use client";
 
+import { ProductCard } from "@/components/ProductCard";
 import { addToCartAtom } from "@/lib/cart";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSetAtom } from "jotai/react";
@@ -69,6 +70,24 @@ const MenuPage = () => {
       />
       {/* 2 cards per row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+        {data?.map((item) => (
+          <ProductCard
+            key={item.id}
+            id={item.id}
+            name={item.name}
+            price={item.price}
+            description={item.description}
+            onAddCart={() =>
+              addToCart({
+                productId: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: 1,
+              })
+            }
+            onDelete={() => handleDelete(item.id)}
+          />
+        ))}
         {data?.map((item) => (
           <div key={item.id} className="border p-4 rounded mb-2">
             <h2 className="text-xl font-bold">

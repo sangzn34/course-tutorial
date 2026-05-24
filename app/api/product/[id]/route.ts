@@ -5,10 +5,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  await prisma.product.delete({
-    where: {
-      id,
-    },
+  await prisma.product.update({
+    where: { id },
+    data: { deletedAt: new Date() },
   });
   return Response.json({ message: "Product deleted successfully" });
 }
@@ -19,9 +18,7 @@ export async function GET(
 ) {
   const { id } = await params;
   const product = await prisma.product.findUnique({
-    where: {
-      id,
-    },
+    where: { id },
   });
   if (!product) {
     return Response.json({ message: "Product not found" }, { status: 404 });

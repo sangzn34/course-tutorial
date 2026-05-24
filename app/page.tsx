@@ -3,6 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 type LoginForm = {
   username: string;
@@ -24,14 +25,23 @@ export default function Home() {
   const { mutateAsync, isPending } = useMutation({
     mutationKey: ["login"],
     mutationFn: (data: LoginForm) =>
-      fetch("/api/login", {
+      fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-      }).then((res) => res.json()),
+      }),
     onSuccess: (data) => {
+      if (data.status !== 200) {
+        console.error("Login failed:", data);
+        toast.error(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (data.body as any)?.message ||
+            "Login failed. Please check your credentials and try again.",
+        );
+        return;
+      }
       console.log("Login successful:", data);
       router.push("/menu");
     },

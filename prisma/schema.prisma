@@ -4,8 +4,9 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../lib/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -13,23 +14,32 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  orders    Order[]
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+  role         UserRole @default(USER)
+  orders       Order[]
 
   @@map("users")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model Product {
   id          String      @id @default(uuid())
-  name        String      @unique
+  name        String
   price       Float
   description String?
   createdAt   DateTime    @default(now())
+  deletedAt   DateTime?
   orderItems  OrderItem[]
 
+  @@unique([name], where: { deletedAt: null })
   @@map("products")
 }
 
