@@ -1,14 +1,12 @@
-"use client";
-
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/lib/client";
 import { Toaster } from "sonner";
-import { CartButton } from "@/components/CartButton";
 import { LocatorJS } from "@/components/LocatorJS";
 import { cn } from "@/lib/utils";
-import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { Metadata } from "next";
+import { SiteHeader } from "@/components/SiteHeader";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -22,6 +20,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const metadata: Metadata = {
+  title: { default: "My Coffee", template: "%s - My Coffee" },
+  description: "ร้านกาแฟออนไลน์ - สั่งง่าย ส่งไว",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,6 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={cn(
         "h-full",
         "antialiased",
@@ -39,15 +43,16 @@ export default function RootLayout({
         inter.variable,
       )}
     >
-      <QueryProvider>
-        <SidebarProvider>
-          <AppSidebar />
-          <body className="min-h-full flex flex-col">{children}</body>
-          <Toaster richColors position="top-right" />
-          <CartButton />
-          <LocatorJS />
-        </SidebarProvider>
-      </QueryProvider>
+      <body className="flex flex-col">
+        <ThemeProvider>
+          <QueryProvider>
+            <SiteHeader />
+            <main className="flex flex-1 flex-col">{children}</main>
+            <Toaster richColors position="top-right" />
+            <LocatorJS />
+          </QueryProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

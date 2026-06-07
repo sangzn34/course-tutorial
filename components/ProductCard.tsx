@@ -33,7 +33,7 @@ export function ProductCard(props: ProductCardProps) {
       />
       <CardHeader>
         <CardAction>
-          <Badge variant="secondary">{price.toFixed(2)} THB</Badge>
+          <Badge variant="secondary">{price?.toFixed(2)} THB</Badge>
         </CardAction>
         <CardTitle>{name}</CardTitle>
         <CardDescription>{description}</CardDescription>

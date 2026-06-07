@@ -1,10 +1,11 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { cartCountAtom } from "@/lib/cart";
 import { useAtomValue } from "jotai/react";
 import { ShoppingCart } from "lucide-react";
-import { CartDrawer } from "./CartDrawer";
 import { useState } from "react";
+import { CartDrawer } from "./CartDrawer";
 
 export const CartButton = () => {
   const count = useAtomValue(cartCountAtom);
@@ -12,19 +13,21 @@ export const CartButton = () => {
 
   return (
     <>
-      <button
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg"
-        aria-label="Open cart"
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={`ตะกร้า (${count} รายการ)`}
         onClick={() => setOpen(true)}
+        className="relative"
       >
-        <ShoppingCart className="h-6 w-6" />
+        <ShoppingCart className="h-4 w-4" />
         {count > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs">
-            {count}
+          <span className="bg-destructive text-white absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums">
+            {count > 99 ? "99+" : count}
           </span>
         )}
-      </button>
-      <CartDrawer open={open} onClose={() => setOpen(false)} />
+      </Button>
+      <CartDrawer open={open} onOpenChange={setOpen} />
     </>
   );
 };
