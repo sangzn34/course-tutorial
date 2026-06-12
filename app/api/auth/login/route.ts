@@ -1,15 +1,13 @@
+import { verifyPassword } from "@/lib/auth/password";
+import { setSessionCookie } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import { loginSchema } from "@/lib/schemas/auth";
 import z from "zod";
 
-const loginScheme = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-});
-
 export async function POST(request: Request) {
-  // username, password
+  // email, password
   const payload = await request.json();
-  const result = loginScheme.safeParse(payload);
+  const result = loginSchema.safeParse(payload);
 
   if (!result.success) {
     return new Response(JSON.stringify(z.treeifyError(result.error)), {
@@ -18,20 +16,38 @@ export async function POST(request: Request) {
     });
   }
 
-  const { username, password } = result.data;
+  const { email, password } = result.data;
 
-  console.log("Received login data:", { username, password });
+  console.log("Received login data:", { email, password });
 
-  const user = await prisma.user.findUnique({
-    where: { email: username, passwordHash: password },
-  });
+  // const user = await prisma.user.findUnique({
+  //   where: { email: email, passwordHash: password },
+  // });
+  const user = await prisma.user.findUnique({ where: { email: email } });
+
+  console.log("user", user);
+
+  // เช็คว่าพบ user หรือไม่ และตรวจสอบรหัสผ่าน
+  // if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  //   return Response.json(
+  //     { message: "Invalid email or password" },
+  //     { status: 401 },
+  //   );
+  // }
 
   if (!user) {
     return Response.json(
-      { message: "Invalid username or password" },
+      { message: "Invalid email or password" },
       { status: 401 },
     );
   }
+
+  // สร้าง session และตั้ง cookie
+  await setSessionCookie({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
 
   return Response.json({ message: "Login successful" });
 }
