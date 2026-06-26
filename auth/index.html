@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0c0d12; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+<!-- ░░ SLIDE 1 — TITLE ░░ -->
+<section data-label="Title" data-screen-label="01" data-speaker-notes="แนะนำ workshop: เราจะสร้างระบบ auth จริงในแอปสั่งอาหาร ตั้งแต่สมัครสมาชิก จนถึงแยกสิทธิ์ admin โฟกัสที่ Next.js 16 ซึ่งเปลี่ยน middleware.ts เป็น proxy.ts">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:96px 100px;display:flex;flex-direction:column;justify-content:center;background:radial-gradient(120% 120% at 100% 0%, #1b1d2b 0%, #15161e 42%, #111219 100%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:34px;">
+      <span style="width:13px;height:13px;border-radius:50%;background:#73daca;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#787c99;letter-spacing:3px;text-transform:uppercase;">Food-Ordering App · Dev Workshop</span>
+    </div>
+    <h1 style="font-size:96px;line-height:1.04;font-weight:700;color:#f0f2ff;margin:0;letter-spacing:-1.5px;max-width:1400px;">Auth ใน <span style="color:#73daca;">Next.js 16</span></h1>
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:40px;color:#9aa3c4;margin:28px 0 0;letter-spacing:-0.5px;">register → login → role-based access</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:56px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">Prisma</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">Postgres</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">bcrypt</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">JWT</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">shadcn/ui</span>
+    </div>
+    <p style="font-size:27px;color:#6c7290;margin:64px 0 0;">สำหรับมือใหม่ React / Next.js · เนื้อหาภาษาไทย · keyword อังกฤษ</p>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 2 — FLOW OVERVIEW ░░ -->
+<section data-label="ภาพรวม Flow" data-screen-label="02" data-speaker-notes="วาดภาพรวมทั้งระบบก่อนลงรายละเอียด: สมัคร แล้ว login ได้ JWT cookie จากนั้น proxy ป้องกัน route และสุดท้ายตรวจสิทธิ์ตาม role สองขั้นแรกคือ authentication ขั้นสุดท้ายคือ authorization">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">02</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">The Big Picture</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">ภาพรวม flow ทั้งระบบ</h2>
+
+    <div style="display:flex;align-items:stretch;gap:18px;flex:1;margin-top:56px;">
+      <!-- node 1 -->
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:16px;padding:30px 26px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;letter-spacing:1px;">STEP 01</span>
+        <span style="font-size:34px;font-weight:600;color:#e6eaff;">register</span>
+        <span style="font-size:25px;line-height:1.4;color:#9aa3c4;">สมัครสมาชิก → hash password (bcrypt) แล้วเก็บลง DB</span>
+      </div>
+      <div style="display:flex;align-items:center;font-size:46px;color:#73daca;">→</div>
+      <!-- node 2 -->
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:16px;padding:30px 26px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;letter-spacing:1px;">STEP 02</span>
+        <span style="font-size:34px;font-weight:600;color:#e6eaff;">login</span>
+        <span style="font-size:25px;line-height:1.4;color:#9aa3c4;">ตรวจรหัส → ออก JWT เก็บใน httpOnly cookie</span>
+      </div>
+      <div style="display:flex;align-items:center;font-size:46px;color:#73daca;">→</div>
+      <!-- node 3 -->
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:16px;padding:30px 26px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;letter-spacing:1px;">STEP 03</span>
+        <span style="font-size:34px;font-weight:600;color:#e6eaff;">protect route</span>
+        <span style="font-size:25px;line-height:1.4;color:#9aa3c4;">proxy.ts เช็ค cookie ก่อนเข้าหน้า</span>
+      </div>
+      <div style="display:flex;align-items:center;font-size:46px;color:#73daca;">→</div>
+      <!-- node 4 -->
+      <div style="flex:1;background:#1a1b26;border:1px solid #3a4060;border-radius:16px;padding:30px 26px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;letter-spacing:1px;">STEP 04</span>
+        <span style="font-size:34px;font-weight:600;color:#e6eaff;">authz (role)</span>
+        <span style="font-size:25px;line-height:1.4;color:#9aa3c4;">requireRole: USER vs ADMIN ที่ API</span>
+      </div>
+    </div>
+
+    <p style="font-size:26px;color:#787c99;margin:28px 0 0;">ขั้น 01–03 = พิสูจน์ตัวตน <span style="color:#9aa3c4;">(Authentication)</span> &nbsp;·&nbsp; ขั้น 04 = ตรวจสิทธิ์ <span style="color:#9aa3c4;">(Authorization)</span></p>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">ทุกอย่างต่อกันเป็น flow เดียว — <b style="color:#73daca;font-weight:600;">สมัคร → login → ป้องกัน → ตรวจสิทธิ์</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 3 — BCRYPT REGISTER ░░ -->
+<section data-label="bcrypt / register" data-screen-label="03" data-speaker-notes="หัวใจคือห้ามเก็บ plaintext เด็ดขาด เช็คอีเมลซ้ำก่อนตอบ 409 แล้ว hash ด้วย bcrypt cost 12 ซึ่งช้าพอจะกัน brute-force เก็บแต่ passwordHash">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">03</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Register · Bcrypt</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">เก็บรหัสผ่านอย่างปลอดภัย</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 35%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">เช็คอีเมลซ้ำก่อน → ตอบ <b style="color:#e6eaff;font-weight:600;">409 Conflict</b></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">hash ด้วย bcrypt <b style="color:#e6eaff;font-weight:600;">cost 12</b> — ช้าพอที่จะกัน brute-force</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">เก็บแต่ <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">passwordHash</code> — ไม่เคยเก็บ plaintext</span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">app/api/register/route.ts</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code3 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">ห้ามเก็บ password เป็น plaintext เด็ดขาด — <b style="color:#73daca;font-weight:600;">hash ด้วย bcrypt เสมอ</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 4 — JWT COOKIE ░░ -->
+<section data-label="httpOnly cookie" data-screen-label="04" data-speaker-notes="เก็บ JWT ใน cookie ไม่ใช่ localStorage เพราะ httpOnly ทำให้ JavaScript อ่าน token ไม่ได้ กัน XSS ขโมย session ส่วน sameSite=lax กัน CSRF และ secure เปิดเฉพาะ production">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">04</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">JWT · Cookie</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">JWT ใน httpOnly cookie</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 35%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">เก็บ token ใน <b style="color:#e6eaff;font-weight:600;">cookie</b> ไม่ใช่ localStorage</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">httpOnly</code> → JavaScript แตะ token ไม่ได้</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">sameSite=lax</code> + <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">secure</code> (prod)</span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">lib/auth/cookie.ts</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code4 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;"><b style="color:#73daca;font-weight:600;">httpOnly = JavaScript อ่าน token ไม่ได้</b> → กัน XSS ขโมย session</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 5 — LOGIN ░░ -->
+<section data-label="login / enumeration" data-screen-label="05" data-speaker-notes="ตรวจรหัสด้วย bcrypt.compare จุดสำคัญคือรวมกรณีไม่มี user กับรหัสผิดเป็น error เดียวกัน ตอบ 401 เสมอ ไม่บอกใบ้ว่าอีเมลไหนมีในระบบ กัน user enumeration">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">05</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Login · Verify</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">login — รวม error เป็นข้อความเดียว</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 35%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">verify ด้วย <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">bcrypt.compare</code></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">"ไม่มี user" และ "รหัสผิด" → <b style="color:#e6eaff;font-weight:600;">error เดียวกัน</b></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">ตอบ <b style="color:#e6eaff;font-weight:600;">401</b> เสมอ — ไม่บอกใบ้</span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">app/api/login/route.ts</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code5 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">error เดียวสำหรับทุกกรณี → <b style="color:#73daca;font-weight:600;">ไม่บอกว่าอีเมลไหนมีในระบบ</b> (user enumeration)</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 6 — SESSION HELPERS ░░ -->
+<section data-label="session helpers" data-screen-label="06" data-speaker-notes="รวม logic session ไว้ที่เดียว getSession อ่าน cookie แล้ว verify JWT, logout ลบ cookie, /me คืน user ปัจจุบัน จุดสำคัญคือถ้าไม่มี JWT_SECRET ให้ throw ทันที ห้ามใส่ค่า fallback">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">06</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Session</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">session helpers — getSession / logout / /me</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 35%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">getSession()</code> อ่าน cookie → verify JWT</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">/me</code> และ logout ใช้ session ชุดเดียวกัน</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">ไม่มี <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">JWT_SECRET</code> → throw <b style="color:#e6eaff;font-weight:600;">(fail-closed)</b></span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">lib/auth/session.ts</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code6 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">ไม่มี <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">JWT_SECRET</code> ต้อง throw ทันที — <b style="color:#73daca;font-weight:600;">อย่าใส่ค่า fallback เด็ดขาด</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 7 — PROXY.TS ROUTE PROTECTION ░░ -->
+<section data-label="proxy.ts (Next 16)" data-screen-label="07" data-speaker-notes="Next 16 เปลี่ยนชื่อ middleware.ts เป็น proxy.ts รันบน Edge ก่อนถึง page ถ้าไม่มี token ให้ redirect ไป login พร้อมแนบ ?redirect= เพื่อพากลับมาหน้าเดิมหลัง login สำเร็จ">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">07</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Route Protection</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">ป้องกัน route ด้วย <span style="color:#73daca;">proxy.ts</span></h2>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:32px;">
+      <div style="flex:1.15;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">proxy.ts &nbsp;(root)</span></div>
+        <pre style="margin:0;padding:24px 28px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.55;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code7 }}</pre>
+      </div>
+
+      <!-- mini vertical flow -->
+      <div style="flex:0.85;display:flex;flex-direction:column;justify-content:center;gap:0;">
+        <div style="background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:18px 22px;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#9aa3c4;">REQ →</span> <span style="font-size:25px;color:#e6eaff;">/account</span>
+        </div>
+        <div style="text-align:center;font-size:30px;color:#73daca;line-height:1.2;padding:6px 0;">↓</div>
+        <div style="background:#1a1b26;border:1px solid #3a4060;border-radius:12px;padding:18px 22px;">
+          <span style="font-size:25px;color:#e6eaff;font-weight:600;">proxy.ts</span> <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;">· Edge runtime</span>
+        </div>
+        <div style="text-align:center;font-size:30px;color:#73daca;line-height:1.2;padding:6px 0;">↓</div>
+        <div style="display:flex;gap:14px;">
+          <div style="flex:1;background:#211a22;border:1px solid #4a3050;border-radius:12px;padding:16px 18px;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#d98aa8;margin-bottom:6px;">no token</div>
+            <div style="font-size:24px;color:#c5cce6;line-height:1.35;">redirect <code style="font-family:'IBM Plex Mono',monospace;color:#9aa3c4;">/login?redirect=…</code></div>
+          </div>
+          <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:12px;padding:16px 18px;">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;margin-bottom:6px;">has token</div>
+            <div style="font-size:24px;color:#c5cce6;line-height:1.35;">ผ่านเข้าหน้า</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">proxy.ts คือ <b style="color:#73daca;font-weight:600;">ด่านแรก</b> — แต่ไม่ใช่ด่านเดียว ยังต้อง guard ที่ API ด้วย</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 8 — AUTH PAGES (zod) ░░ -->
+<section data-label="forms · zod" data-screen-label="08" data-speaker-notes="หน้า login/register ใช้ react-hook-form คู่กับ zodResolver จุดขายคือ schema ตัวเดียว เอาไป validate ได้ทั้งฝั่ง client เพื่อ UX และฝั่ง server เพื่อความปลอดภัย กฎไม่หลุดรอด">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">08</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Forms · Validation</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">หน้า login/register — react-hook-form + zod</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 35%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">react-hook-form</code> + <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">zodResolver</code></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><b style="color:#e6eaff;font-weight:600;">schema เดียว</b> ใช้ทั้ง client + server</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">ข้อความ error เขียนไว้ใน schema เลย</span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">lib/schema.ts + app/login/page.tsx</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code8 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">schema ชุดเดียว validate ทั้งสองฝั่ง → <b style="color:#73daca;font-weight:600;">กฎไม่มีทางหลุดรอด</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 9 — CONCEPT: AUTHN ≠ AUTHZ ░░ -->
+<section data-label="AuthN ≠ AuthZ" data-screen-label="09" data-speaker-notes="แนวคิดหลักของทั้ง deck: authentication ถามว่าคุณคือใคร ตอบด้วย 401 ถ้ายังไม่รู้ ส่วน authorization ถามว่าคุณมีสิทธิ์ไหม ตอบด้วย 403 ถ้า login แล้วแต่ไม่มีสิทธิ์ สองคำนี้คนละเรื่องกัน">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:radial-gradient(120% 130% at 50% -10%, #1c1e2c 0%, #15161e 55%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">09</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Core Concept</span>
+    </div>
+    <h2 style="font-size:62px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-1px;">Authentication <span style="color:#73daca;">≠</span> Authorization</h2>
+
+    <div style="display:flex;flex:1;min-height:0;margin-top:48px;align-items:stretch;">
+      <!-- AUTHN -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:20px;padding-right:56px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#73daca;letter-spacing:2px;">AUTHENTICATION</span>
+        <span style="font-size:52px;font-weight:700;color:#f0f2ff;line-height:1.05;">"คุณคือใคร?"</span>
+        <span style="font-size:30px;color:#9aa3c4;line-height:1.45;">พิสูจน์ตัวตน — login ด้วย email + password แล้วออก session</span>
+        <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:12px;margin-top:6px;background:#1a1b26;border:1px solid #4a3050;border-radius:10px;padding:14px 20px;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:30px;color:#d98aa8;font-weight:600;">401</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#9aa3c4;">Unauthorized</span>
+        </div>
+        <span style="font-size:27px;color:#c5cce6;line-height:1.4;">ยังไม่ได้ login / token หมดอายุ → <b style="color:#e6eaff;font-weight:600;">ระบบไม่รู้ว่าคุณเป็นใคร</b></span>
+      </div>
+
+      <div style="width:1px;background:#2a2f45;"></div>
+
+      <!-- AUTHZ -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:20px;padding-left:56px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#73daca;letter-spacing:2px;">AUTHORIZATION</span>
+        <span style="font-size:52px;font-weight:700;color:#f0f2ff;line-height:1.05;">"คุณมีสิทธิ์ไหม?"</span>
+        <span style="font-size:30px;color:#9aa3c4;line-height:1.45;">ตรวจบทบาท — เป็น USER หรือ ADMIN ทำสิ่งนี้ได้หรือเปล่า</span>
+        <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:12px;margin-top:6px;background:#1a1b26;border:1px solid #5a4a28;border-radius:10px;padding:14px 20px;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:30px;color:#e0b15a;font-weight:600;">403</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#9aa3c4;">Forbidden</span>
+        </div>
+        <span style="font-size:27px;color:#c5cce6;line-height:1.4;">login แล้ว แต่ไม่มีสิทธิ์ → <b style="color:#e6eaff;font-weight:600;">รู้ว่าคุณเป็นใคร แต่ห้ามทำ</b></span>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">AuthN ถาม <b style="color:#73daca;font-weight:600;">"คุณคือใคร"</b> · AuthZ ถาม <b style="color:#73daca;font-weight:600;">"คุณทำสิ่งนี้ได้ไหม"</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 10 — ADMIN SEED ░░ -->
+<section data-label="seed ADMIN" data-screen-label="10" data-speaker-notes="ช่องโหว่ที่พบบ่อย: ปล่อยให้ register ตั้ง role เองได้ ที่ถูกคือ API register แจก USER เสมอ ส่วน ADMIN ต้องสร้างผ่าน seed หรือ promote ฝั่ง server ใช้ upsert เพื่อให้รันซ้ำได้แบบ idempotent">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">10</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Seed Admin</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">ADMIN ไม่ได้แจกฟรี — seed / promote</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 35%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">API register ตั้ง <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">role = USER</code> เสมอ</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">ADMIN สร้างผ่าน <b style="color:#e6eaff;font-weight:600;">seed / promote</b> ฝั่ง server</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">upsert</code> → รันซ้ำได้ (idempotent)</span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">prisma/seed.ts</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code10 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">register แจกแค่ USER เสมอ — <b style="color:#73daca;font-weight:600;">ADMIN ต้อง seed/promote ฝั่ง server เท่านั้น</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 11 — requireRole API GUARD ░░ -->
+<section data-label="requireRole" data-screen-label="11" data-speaker-notes="นี่คือด่านจริง requireRole gate เฉพาะ method ที่เปลี่ยนข้อมูล POST PUT DELETE ให้เฉพาะ ADMIN ส่วน GET รายการสินค้าเปิดให้ทุกคน ถ้าไม่ login ได้ 401 ถ้า login แต่ไม่ใช่ admin ได้ 403">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">11</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Authorization · API</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">requireRole — ด่านจริงที่ API</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 35%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">requireRole("ADMIN")</code> gate POST/PUT/DELETE</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">GET</code> รายการสินค้า → เปิดให้ทุกคน</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">ไม่มีสิทธิ์ → โยน <b style="color:#e6eaff;font-weight:600;">401 / 403</b></span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">app/api/products/route.ts</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code11 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">ด่านจริงอยู่ที่ API — <b style="color:#73daca;font-weight:600;">requireRole คือสิ่งที่หยุดคนไม่มีสิทธิ์จริง ๆ</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 12 — GATE UI ░░ -->
+<section data-label="gate UI" data-screen-label="12" data-speaker-notes="ฝั่ง UI ใช้ useMe อ่าน /me แล้วซ่อนปุ่ม admin กับสลับ login/logout ตาม session แต่ย้ำว่าการซ่อนใน UI เป็นแค่ UX ไม่ใช่ security ใครเปิด devtools ก็เห็น ด่านจริงยังเป็น API guard">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">12</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Authorization · UI</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">ซ่อนปุ่มใน UI — UX ไม่ใช่ security</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 35%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">useMe()</code> อ่าน <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">/me</code> ฝั่ง client</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">role !== ADMIN</code> → ซ่อนปุ่ม</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">toggle login/logout ตาม session</span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">components/Navbar.tsx</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code12 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">UI hide = <b style="color:#e0b15a;font-weight:600;">UX ไม่ใช่ security</b> — <b style="color:#73daca;font-weight:600;">API guard คือด่านจริง</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 13 — TAKEAWAYS ░░ -->
+<section data-label="สรุป Takeaways" data-screen-label="13" data-speaker-notes="ปิดท้ายด้วย 6 ข้อที่ต้องจำ: hash เสมอ, httpOnly, error เดียว, fail-closed secret, AuthN ต่างจาก AuthZ, และด่านจริงคือ API ไม่ใช่ UI">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:80px 100px;display:flex;flex-direction:column;background:radial-gradient(120% 120% at 0% 100%, #1b1d2b 0%, #15161e 45%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">13</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Takeaways</span>
+    </div>
+    <h2 style="font-size:62px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0 0 48px;letter-spacing:-1px;">6 ข้อที่ต้องจำกลับบ้าน</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px 64px;flex:1;align-content:center;">
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">Hash เสมอ</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">bcrypt cost 12 — ไม่เคยเก็บ plaintext</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">httpOnly cookie</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">เก็บ JWT แบบ JS อ่านไม่ได้ → กัน XSS</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">Error เดียว</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">login ผิด → ไม่บอกว่าอีเมลไหนมีจริง</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">Fail-closed secret</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">ไม่มี JWT_SECRET → throw ทันที</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">AuthN ≠ AuthZ</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">"คุณคือใคร" (401) ต่างจาก "ทำได้ไหม" (403)</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">ด่านจริงคือ API</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">ซ่อนปุ่ม = UX — requireRole คือ security</div></div>
+      </div>
+    </div>
+
+    <p style="font-size:28px;color:#787c99;margin:40px 0 0;border-top:1px solid #2a2f45;padding-top:28px;">Auth ใน Next.js 16 · register → login → role-based access &nbsp;·&nbsp; <span style="color:#73daca;">ขอบคุณครับ 🙏</span></p>
+  </div>
+</section>
+
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  hl(code) {
+    const R = React;
+    const C = {
+      com: '#5f6b85', str: '#9ece6a', kw: '#bb9af7',
+      fn: '#7aa2f7', type: '#7dcfff', num: '#ff9e64'
+    };
+    const re = /(\/\/[^\n]*)|(`[^`]*`|"[^"]*"|'[^']*')|\b(const|let|var|function|return|if|else|await|async|export|import|from|new|try|catch|throw|typeof|type|interface|class|extends|this|of|in|as|default|void)\b|\b(true|false|null|undefined|\d+)\b|([A-Za-z_$][\w$]*)(?=\s*\()|\b([A-Z][\w$]*)\b/g;
+    const out = [];
+    let last = 0, m, k = 0;
+    while ((m = re.exec(code)) !== null) {
+      if (m.index > last) out.push(code.slice(last, m.index));
+      let color = null, italic = false;
+      if (m[1]) { color = C.com; italic = true; }
+      else if (m[2]) color = C.str;
+      else if (m[3]) color = C.kw;
+      else if (m[4]) color = C.num;
+      else if (m[5]) color = C.fn;
+      else if (m[6]) color = C.type;
+      const st = { color };
+      if (italic) st.fontStyle = 'italic';
+      out.push(R.createElement('span', { key: k++, style: st }, m[0]));
+      last = re.lastIndex;
+    }
+    if (last < code.length) out.push(code.slice(last));
+    return out;
+  }
+
+  renderVals() {
+    const code3 = `const exists = await prisma.user.findUnique({ where: { email } })
+if (exists)
+  return Response.json({ error: "อีเมลถูกใช้แล้ว" }, { status: 409 })
+
+const passwordHash = await bcrypt.hash(password, 12)  // cost 12
+await prisma.user.create({
+  data: { email, passwordHash, role: "USER" },
+})`;
+
+    const code4 = `cookies().set("token", token, {
+  httpOnly: true,   // JS อ่านไม่ได้ → กัน XSS ขโมย token
+  sameSite: "lax",  // กัน CSRF ข้ามเว็บ
+  secure: process.env.NODE_ENV === "production",
+  maxAge: 60 * 60 * 24 * 7,  // 7 วัน
+  path: "/",
+})`;
+
+    const code5 = `const user = await prisma.user.findUnique({ where: { email } })
+const ok = user && await bcrypt.compare(password, user.passwordHash)
+
+if (!ok)
+  // ไม่แยก "ไม่มี user" กับ "รหัสผิด" → กัน enumeration
+  return Response.json(
+    { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" }, { status: 401 })`;
+
+    const code6 = `const SECRET = process.env.JWT_SECRET
+if (!SECRET) throw new Error("JWT_SECRET ไม่ถูกตั้งค่า")  // fail-closed
+
+export async function getSession() {
+  const token = cookies().get("token")?.value
+  if (!token) return null
+  try { return verify(token, SECRET) } catch { return null }
+}`;
+
+    const code7 = `// proxy.ts — เดิมชื่อ middleware.ts ใน Next 15
+export function proxy(req: NextRequest) {
+  const token = req.cookies.get("token")?.value
+  if (token) return NextResponse.next()
+
+  const url = new URL("/login", req.url)
+  url.searchParams.set("redirect", req.nextUrl.pathname)
+  return NextResponse.redirect(url)
+}`;
+
+    const code8 = `// schema เดียว ใช้ทั้ง client + server
+export const loginSchema = z.object({
+  email: z.string().email("อีเมลไม่ถูกต้อง"),
+  password: z.string().min(8, "อย่างน้อย 8 ตัว"),
+})
+
+const form = useForm({ resolver: zodResolver(loginSchema) })`;
+
+    const code10 = `// prisma/seed.ts — promote เป็น ADMIN แบบ idempotent
+await prisma.user.upsert({
+  where:  { email: "admin@shop.dev" },
+  update: { role: "ADMIN" },
+  create: { email: "admin@shop.dev",
+            passwordHash, role: "ADMIN" },
+})`;
+
+    const code11 = `export async function POST(req: Request) {
+  await requireRole("ADMIN")   // ไม่ login → 401, USER → 403
+  // ...สร้างสินค้าใหม่
+}
+
+export async function GET() {
+  return Response.json(await prisma.product.findMany())  // เปิดทุกคน
+}`;
+
+    const code12 = `const { user } = useMe()   // อ่านจาก GET /me
+
+{user?.role === "ADMIN" && (
+  <Button>+ เพิ่มสินค้า</Button>   // ซ่อนปุ่ม admin
+)}
+{user ? <LogoutButton /> : <LoginLink />}`;
+
+    return {
+      code3: this.hl(code3),
+      code4: this.hl(code4),
+      code5: this.hl(code5),
+      code6: this.hl(code6),
+      code7: this.hl(code7),
+      code8: this.hl(code8),
+      code10: this.hl(code10),
+      code11: this.hl(code11),
+      code12: this.hl(code12),
+    };
+  }
+}
+</script>
+</body>
+</html>
+

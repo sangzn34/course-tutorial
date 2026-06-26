@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0c0d12; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+<!-- ░░ SLIDE 1 — TITLE ░░ -->
+<section data-label="Title" data-screen-label="01" data-speaker-notes="ต่อจากเด็ค auth: ตอนนี้เพิ่มฟีเจอร์อัปโหลดรูปสินค้า ออกแบบ storage ให้สลับ backend ระหว่าง local กับ Supabase ได้ด้วย env ตัวเดียว โดยไม่แตะโค้ดฝั่งแอป">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:96px 100px;display:flex;flex-direction:column;justify-content:center;background:radial-gradient(120% 120% at 100% 0%, #1b1d2b 0%, #15161e 42%, #111219 100%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:34px;">
+      <span style="width:13px;height:13px;border-radius:50%;background:#73daca;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#787c99;letter-spacing:3px;text-transform:uppercase;">Food-Ordering App · Dev Workshop</span>
+    </div>
+    <h1 style="font-size:96px;line-height:1.04;font-weight:700;color:#f0f2ff;margin:0;letter-spacing:-1.5px;max-width:1400px;">File Upload: <span style="color:#73daca;">รูปสินค้า</span></h1>
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:40px;color:#9aa3c4;margin:28px 0 0;letter-spacing:-0.5px;">เลือกไฟล์ → upload → ได้ url → save</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:56px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">ต่อจากระบบ auth</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">อัปได้เฉพาะ admin</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">local + Supabase</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">Prisma + Postgres</span>
+    </div>
+    <p style="font-size:27px;color:#6c7290;margin:64px 0 0;">สำหรับมือใหม่ React / Next.js · เนื้อหาภาษาไทย · keyword อังกฤษ</p>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 2 — OVERVIEW ░░ -->
+<section data-label="ภาพรวม" data-screen-label="02" data-speaker-notes="หัวใจ: เราไม่เก็บไฟล์ลง DB เราเก็บแค่ที่อยู่รูปเป็น string ส่วนตัวไฟล์ไปอยู่ที่ storage และเลือก storage ได้ด้วย env">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">02</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Mental Model</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">DB เก็บ "ที่อยู่รูป" ไม่ใช่ตัวไฟล์</h2>
+
+    <div style="display:flex;align-items:stretch;gap:18px;flex:1;margin-top:56px;">
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:16px;padding:32px 28px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;letter-spacing:1px;">FILE</span>
+        <span style="font-size:34px;font-weight:600;color:#e6eaff;">ไฟล์รูปจริง</span>
+        <span style="font-size:25px;line-height:1.4;color:#9aa3c4;">ผู้ใช้เลือกจากเครื่อง — ตัวไฟล์ binary</span>
+      </div>
+      <div style="display:flex;align-items:center;font-size:46px;color:#73daca;">→</div>
+      <div style="flex:1.15;background:#16221d;border:1px solid #2f5045;border-radius:16px;padding:32px 28px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;letter-spacing:1px;">STORAGE</span>
+        <span style="font-size:34px;font-weight:600;color:#e6eaff;">local / Supabase</span>
+        <span style="font-size:25px;line-height:1.4;color:#9aa3c4;">เก็บไฟล์ตัวจริง — สลับได้ด้วย env</span>
+      </div>
+      <div style="display:flex;align-items:center;font-size:46px;color:#73daca;">→</div>
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:16px;padding:32px 28px;display:flex;flex-direction:column;gap:14px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;letter-spacing:1px;">DATABASE</span>
+        <span style="font-size:34px;font-weight:600;color:#e6eaff;">imageUrl: string</span>
+        <span style="font-size:25px;line-height:1.4;color:#9aa3c4;">เก็บแค่ "ที่อยู่" ของรูป</span>
+      </div>
+    </div>
+
+    <p style="font-size:26px;color:#787c99;margin:28px 0 0;">ไฟล์ตัวจริงอยู่ที่ <span style="color:#9aa3c4;">storage</span> &nbsp;·&nbsp; DB เก็บแค่ <span style="color:#9aa3c4;">URL เป็น string</span> — แยกหน้าที่กันชัด</p>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">เลือก storage backend ได้ด้วย <b style="color:#73daca;font-weight:600;">env</b> — schema และฝั่งแอปไม่ต้องรู้ว่าไฟล์ไปอยู่ไหน</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 3 — SCHEMA ░░ -->
+<section data-label="Schema" data-screen-label="03" data-speaker-notes="เพิ่ม field เดียวคือ imageUrl เป็น nullable เพื่อไม่ต้อง backfill ของเดิม และเตือนเรื่อง Prisma 7 ที่ใช้ diff+deploy ใน production แทน migrate dev">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">03</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Schema · Prisma</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">เพิ่ม <span style="color:#73daca;">imageUrl</span> แบบ nullable</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 35%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">String?</code> = nullable → ของเดิมเป็น <b style="color:#e6eaff;font-weight:600;">null</b> ได้เลย</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">เพิ่ม field ใหม่ <b style="color:#e6eaff;font-weight:600;">ไม่ต้อง backfill</b> ข้อมูลเก่า</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">Prisma 7 prod ใช้ <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">migrate diff</code> + <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">db execute</code> — ไม่ใช่ migrate dev</span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">prisma/schema.prisma</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code3 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">field ใหม่ทำเป็น nullable ไว้ก่อนเสมอ — <b style="color:#73daca;font-weight:600;">เพิ่มได้โดยไม่กระทบข้อมูลเดิม</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 4 — STORAGE ADAPTER ░░ -->
+<section data-label="Storage adapter" data-screen-label="04" data-speaker-notes="สไลด์หัวใจ: saveImage เป็นประตูเดียว ทำ validate แล้ว dispatch ไปยัง driver ตาม env — local เซฟลง public/uploads, supabase ยิง REST ด้วย fetch ตรงๆ ไม่ต้องลง SDK">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:64px 92px 52px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">04</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Storage Adapter</span>
+    </div>
+    <h2 style="font-size:50px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">ประตูเดียว: <span style="color:#73daca;">saveImage(file)</span> สลับด้วย env</h2>
+
+    <div style="display:flex;flex-direction:column;gap:16px;flex:1;min-height:0;margin-top:24px;">
+      <div style="background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:14px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">lib/storage/index.ts &nbsp;·&nbsp; validate + dispatch</span></div>
+        <pre style="margin:0;padding:18px 26px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.46;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code4a }}</pre>
+      </div>
+      <div style="display:flex;gap:16px;flex:1;min-height:0;">
+        <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#8990b3;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">toLocal — เซฟลง disk</span></div>
+          <pre style="margin:0;padding:16px 22px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.45;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code4b }}</pre>
+        </div>
+        <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid #2f5045;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;">toSupabase — fetch REST (ไม่ลง SDK)</span></div>
+          <pre style="margin:0;padding:16px 22px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.45;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code4c }}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding-top:18px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">รวม validate + เลือก backend ไว้ที่ฟังก์ชันเดียว — ฝั่งแอปเรียก <b style="color:#73daca;font-weight:600;">saveImage()</b> แค่นั้น</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 5 — UPLOAD ROUTE ░░ -->
+<section data-label="Upload route" data-screen-label="05" data-speaker-notes="route ป้องกันด้วย requireRole admin ตั้ง runtime nodejs เพราะต้องใช้ fs/Buffer และต้องแยก error 400 ที่ผู้ใช้แก้เองได้ ออกจาก 500 ที่เป็นปัญหาระบบ">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">05</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Upload Route · API</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">รับไฟล์ที่ <span style="color:#73daca;">/api/upload</span> — gate admin ก่อน</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 38%;display:flex;flex-direction:column;gap:18px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">requireRole("admin")</code> ก่อนเสมอ</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">runtime = "nodejs"</code> — ต้องใช้ fs / Buffer</span></div>
+        <div style="background:#211a22;border:1px solid #4a3050;border-radius:12px;padding:16px 20px;margin-top:6px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#d98aa8;font-weight:600;margin-bottom:4px;">400 · BadRequest</div>
+          <div style="font-size:24px;color:#c5cce6;line-height:1.35;">ฝั่ง <b style="color:#e6eaff;">ผู้ใช้</b> — ไฟล์ผิดชนิด/ใหญ่ไป → แก้เองได้</div>
+        </div>
+        <div style="background:#211d16;border:1px solid #5a4a28;border-radius:12px;padding:16px 20px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#e0b15a;font-weight:600;margin-bottom:4px;">500 · Internal</div>
+          <div style="font-size:24px;color:#c5cce6;line-height:1.35;">ฝั่ง <b style="color:#e6eaff;">ระบบ</b> — storage ล่ม → log แล้วแจ้ง "ลองใหม่"</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">app/api/upload/route.ts</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.62;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code5 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">ตรวจสิทธิ์ที่ route ก่อนเสมอ — <b style="color:#73daca;font-weight:600;">ผู้ใช้ผิด = 400, ระบบพัง = 500</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 6 — WIRE FORM ░░ -->
+<section data-label="Wire form" data-screen-label="06" data-speaker-notes="ขั้นตอนหน้าบ้าน: เลือกไฟล์ทำ preview ด้วย objectURL ก่อน แล้วอัปไฟล์ให้ได้ url ค่อยสร้าง product พร้อม imageUrl ย้ำว่าอย่าตั้ง Content-Type เอง เพราะ browser ต้องใส่ boundary ให้ FormData">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:64px 92px 56px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">06</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Wire The Form · 2 Steps</span>
+    </div>
+    <h2 style="font-size:50px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">อัปไฟล์ก่อน → ได้ url → ค่อย save product</h2>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-top:26px;">
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:16px 10px;text-align:center;font-size:24px;color:#c5cce6;">เลือกไฟล์</div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:28px;">→</span>
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:16px 10px;text-align:center;font-size:24px;color:#c5cce6;">preview</div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:28px;">→</span>
+      <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:12px;padding:16px 10px;text-align:center;font-size:24px;color:#73daca;font-weight:600;">upload</div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:28px;">→</span>
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:16px 10px;text-align:center;font-size:24px;color:#c5cce6;">ได้ url</div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:28px;">→</span>
+      <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:12px;padding:16px 10px;text-align:center;font-size:24px;color:#73daca;font-weight:600;">save product</div>
+    </div>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:24px;">
+      <div style="flex:1.3;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">components/ProductForm.tsx</span></div>
+        <pre style="margin:0;padding:24px 28px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.6;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code6 }}</pre>
+      </div>
+      <div style="flex:0 0 32%;display:flex;flex-direction:column;gap:22px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">FormData → <b style="color:#e6eaff;font-weight:600;">อย่าตั้ง Content-Type เอง</b> ปล่อย browser ใส่ boundary</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">preview ทันทีด้วย <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">URL.createObjectURL</code></span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding-top:18px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">แยกเป็น 2 จังหวะ: <b style="color:#73daca;font-weight:600;">ได้ url ที่ใช้ได้จริงก่อน</b> แล้วจึงผูกกับ product</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 7 — RENDER ░░ -->
+<section data-label="Render" data-screen-label="07" data-speaker-notes="แสดงผลด้วย next/image แบบ fill + sizes มี placeholder ตอนไม่มีรูป และต้องเพิ่ม remotePatterns ให้โดเมน supabase ส่วน local ที่เป็น path เริ่มด้วย / ไม่ต้องตั้ง">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">07</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Render · next/image</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">โชว์รูปด้วย <span style="color:#73daca;">next/image</span> + placeholder</h2>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:1.25;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">ProductCard.tsx + next.config.ts</span></div>
+        <pre style="margin:0;padding:24px 30px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.58;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code7 }}</pre>
+      </div>
+      <div style="flex:0.75;display:flex;flex-direction:column;justify-content:center;gap:20px;">
+        <div style="display:flex;gap:18px;">
+          <div style="flex:1;display:flex;flex-direction:column;gap:12px;">
+            <div style="aspect-ratio:1/1;border-radius:14px;background:repeating-linear-gradient(135deg,#1a1b26,#1a1b26 12px,#15161e 12px,#15161e 24px);border:1px solid #2a2f45;display:flex;align-items:center;justify-content:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;">no image</span></div>
+            <div style="text-align:center;font-size:24px;color:#9aa3c4;">placeholder</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:12px;">
+            <div style="aspect-ratio:1/1;border-radius:14px;background:linear-gradient(160deg,#16221d,#15161e);border:1px solid #2f5045;display:flex;align-items:center;justify-content:center;"><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;">product shot</span></div>
+            <div style="text-align:center;font-size:24px;color:#9aa3c4;">มีรูปจริง</div>
+          </div>
+        </div>
+        <p style="font-size:25px;color:#787c99;line-height:1.45;margin:0;text-align:center;">โดเมน supabase ต้องอยู่ใน <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">remotePatterns</code> · local <code style="font-family:'IBM Plex Mono',monospace;color:#9aa3c4;">/uploads</code> ไม่ต้อง</p>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">รูปจากโดเมนภายนอกต้องเพิ่มใน <b style="color:#73daca;font-weight:600;">remotePatterns</b> ก่อน Next ถึงจะยอมโหลด</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 8 — LOCAL → SUPABASE ░░ -->
+<section data-label="Local → Supabase" data-screen-label="08" data-speaker-notes="ประเด็นสำคัญตอน deploy: local filesystem ไม่รอดบน serverless ไฟล์หายทุกครั้งที่ rebuild และไม่ share ข้าม instance ทางออกคือสลับ STORAGE_DRIVER เป็น supabase โค้ดเท่าเดิมเพราะเราทำ adapter ไว้แล้ว">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:radial-gradient(120% 130% at 50% -10%, #1c1e2c 0%, #15161e 55%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">08</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Local → Supabase · ตอน Deploy</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">local FS ไม่รอด serverless — สลับ env อย่างเดียว</h2>
+
+    <div style="display:flex;flex:1;min-height:0;margin-top:46px;align-items:stretch;gap:30px;">
+      <div style="flex:1;display:flex;flex-direction:column;gap:18px;background:#1a1b26;border:1px solid #2a2f45;border-radius:16px;padding:32px 34px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#9aa3c4;font-weight:600;">STORAGE_DRIVER=local</span>
+        <span style="font-size:25px;color:#787c99;">เหมาะกับตอน dev</span>
+        <div style="height:1px;background:#2a2f45;margin:6px 0;"></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:27px;color:#c5cce6;line-height:1.4;"><span style="color:#73daca;">✓</span><span>ติดตั้งง่าย ไม่ต้องต่อ service</span></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:27px;color:#c5cce6;line-height:1.4;"><span style="color:#d98aa8;">✗</span><span>ไฟล์หายทุกครั้งที่ deploy / rebuild</span></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:27px;color:#c5cce6;line-height:1.4;"><span style="color:#d98aa8;">✗</span><span>หลาย instance ไม่เห็นไฟล์ของกัน</span></div>
+      </div>
+      <div style="display:flex;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:46px;color:#73daca;">→</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:18px;background:#16221d;border:1px solid #2f5045;border-radius:16px;padding:32px 34px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#73daca;font-weight:600;">STORAGE_DRIVER=supabase</span>
+        <span style="font-size:25px;color:#8fb7a6;">เหมาะกับ production</span>
+        <div style="height:1px;background:#2f5045;margin:6px 0;"></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:27px;color:#d5dcec;line-height:1.4;"><span style="color:#73daca;">✓</span><span>ไฟล์คงอยู่ ไม่หายตอน deploy</span></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:27px;color:#d5dcec;line-height:1.4;"><span style="color:#73daca;">✓</span><span>ทุก instance เห็นไฟล์ชุดเดียวกัน</span></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:27px;color:#d5dcec;line-height:1.4;"><span style="color:#73daca;">✓</span><span>เสิร์ฟผ่าน CDN ได้เลย</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">เพราะทำ adapter ไว้ตั้งแต่แรก การย้ายขึ้น prod เหลือแค่เปลี่ยน env — <b style="color:#73daca;font-weight:600;">โค้ดเท่าเดิม</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 9 — TAKEAWAYS ░░ -->
+<section data-label="สรุป" data-screen-label="09" data-speaker-notes="ทบทวน 6 ข้อหลัก ปิดท้ายว่าหัวใจคือการแยก storage ออกมาเป็น adapter ตั้งแต่ต้น ทำให้ทุกอย่างยืดหยุ่น">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:80px 100px;display:flex;flex-direction:column;background:radial-gradient(120% 120% at 0% 100%, #1b1d2b 0%, #15161e 45%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">09</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Takeaways</span>
+    </div>
+    <h2 style="font-size:62px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0 0 48px;letter-spacing:-1px;">6 ข้อที่ต้องจำกลับบ้าน</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px 64px;flex:1;align-content:center;">
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">เก็บ URL ไม่เก็บไฟล์</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">DB เก็บ imageUrl (string) — ไฟล์อยู่ที่ storage</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">saveImage() คือ adapter</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">สลับ backend ด้วย env — ฝั่งแอปไม่ต้องรู้</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">validate + gate admin</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">เช็คชนิด/ขนาด แล้ว requireRole ที่ route</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">upload ก่อน แล้ว save</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">ได้ url จริงก่อน → ค่อยผูกกับ product</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">FormData = no Content-Type</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">ปล่อย browser ใส่ boundary เอง</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">local = dev, supabase = prod</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">local FS ไม่รอด serverless — ย้ายด้วย env</div></div>
+      </div>
+    </div>
+
+    <p style="font-size:28px;color:#787c99;margin:40px 0 0;border-top:1px solid #2a2f45;padding-top:28px;">File Upload ใน Next.js 16 · local + Supabase &nbsp;·&nbsp; <span style="color:#73daca;">ขอบคุณครับ 🙏</span></p>
+  </div>
+</section>
+
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  hl(code) {
+    const R = React;
+    const C = {
+      com: '#5f6b85', str: '#9ece6a', kw: '#bb9af7',
+      fn: '#7aa2f7', type: '#7dcfff', num: '#ff9e64'
+    };
+    const re = /(\/\/[^\n]*)|(`[^`]*`|"[^"]*"|'[^']*')|\b(const|let|var|function|return|if|else|await|async|export|import|from|new|try|catch|throw|typeof|type|interface|class|extends|this|of|in|as|default|void)\b|\b(true|false|null|undefined|\d[\w_]*)\b|([A-Za-z_$][\w$]*)(?=\s*\()|\b([A-Z][\w$]*)\b/g;
+    const out = [];
+    let last = 0, m, k = 0;
+    while ((m = re.exec(code)) !== null) {
+      if (m.index > last) out.push(code.slice(last, m.index));
+      let color = null, italic = false;
+      if (m[1]) { color = C.com; italic = true; }
+      else if (m[2]) color = C.str;
+      else if (m[3]) color = C.kw;
+      else if (m[4]) color = C.num;
+      else if (m[5]) color = C.fn;
+      else if (m[6]) color = C.type;
+      const st = { color };
+      if (italic) st.fontStyle = 'italic';
+      out.push(R.createElement('span', { key: k++, style: st }, m[0]));
+      last = re.lastIndex;
+    }
+    if (last < code.length) out.push(code.slice(last));
+    return out;
+  }
+
+  renderVals() {
+    const code3 = `model Product {
+  id        String  @id @default(cuid())
+  name      String
+  price     Int
+  imageUrl  String?   // เก็บ "ที่อยู่รูป"
+}`;
+
+    const code4a = `const OK = ["image/jpeg", "image/png", "image/webp"]
+const MAX = 5_000_000   // 5MB
+
+export async function saveImage(file: File) {
+  if (!OK.includes(file.type)) throw new BadRequest("ชนิดไฟล์ไม่รองรับ")
+  if (file.size > MAX)         throw new BadRequest("ไฟล์ใหญ่เกิน 5MB")
+  return process.env.STORAGE_DRIVER === "supabase"
+    ? toSupabase(file) : toLocal(file)
+}`;
+
+    const code4b = `async function toLocal(f: File) {
+  const buf = Buffer.from(await f.arrayBuffer())
+  const name = crypto.randomUUID() + ".webp"
+  await writeFile("public/uploads/" + name, buf)
+  return "/uploads/" + name
+}`;
+
+    const code4c = `async function toSupabase(f: File) {
+  const p = crypto.randomUUID() + ".webp"
+  await fetch(URL + "/object/products/" + p, {
+    method: "POST", body: f,
+    headers: { Authorization: "Bearer " + KEY },
+  })
+  return URL + "/object/public/products/" + p
+}`;
+
+    const code5 = `export const runtime = "nodejs"   // ต้องใช้ fs / Buffer
+
+export async function POST(req: Request) {
+  await requireRole("admin")       // gate: เฉพาะ admin
+  const form = await req.formData()
+  const url  = await saveImage(form.get("file") as File)
+  return Response.json({ url })
+}`;
+
+    const code6 = `// 1) อัปไฟล์ก่อน
+const fd = new FormData()
+fd.append("file", file)   // อย่าตั้ง Content-Type เอง!
+const { url } = await fetch("/api/upload",
+  { method: "POST", body: fd }).then(r => r.json())
+
+// 2) ค่อยสร้าง product พร้อม imageUrl
+await createProduct({ name, price, imageUrl: url })`;
+
+    const code7 = `{product.imageUrl
+  ? <Image src={product.imageUrl} alt={product.name}
+      fill sizes="(max-width: 768px) 50vw, 25vw" />
+  : <Placeholder />}   // ไม่มีรูป → placeholder
+
+// next.config.ts
+images: { remotePatterns: [
+  { protocol: "https", hostname: "*.supabase.co" },
+]}`;
+
+    return {
+      code3: this.hl(code3),
+      code4a: this.hl(code4a),
+      code4b: this.hl(code4b),
+      code4c: this.hl(code4c),
+      code5: this.hl(code5),
+      code6: this.hl(code6),
+      code7: this.hl(code7),
+    };
+  }
+}
+</script>
+</body>
+</html>
