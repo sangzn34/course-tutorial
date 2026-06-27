@@ -1,9 +1,9 @@
+import { getSession } from "@/lib/auth/session";
 import { OrderStatus, type Prisma } from "@/lib/generated/prisma/browser";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const orderSchema = z.object({
-  userId: z.string().optional(),
   name: z.string().optional(),
   address: z.string().optional(),
   items: z
@@ -19,6 +19,7 @@ const orderSchema = z.object({
 export async function POST(request: Request) {
   const payload = await request.json().catch(() => null);
   const result = orderSchema.safeParse(payload);
+  const session = await getSession();
 
   if (!result.success) {
     return Response.json(
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
 
   const order = await prisma.order.create({
     data: {
-      userId: body.userId,
+      userId: session?.userId,
       name: body.name ?? "",
       address: body.address ?? "",
       status: OrderStatus.PENDING,

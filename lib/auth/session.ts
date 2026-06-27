@@ -18,11 +18,7 @@ export async function signSessionToken(
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("2h")
-    .sign(
-      new TextEncoder().encode(
-        "5911f3e9791f72c4f9e2004555606e0c838ed27e171f080055eb7e30754b22b4",
-      ),
-    );
+    .sign(new TextEncoder().encode(process.env.JWT_SECRET || "default_secret"));
 }
 
 export async function setSessionCookie(payload: SessionPayload) {
@@ -38,4 +34,40 @@ export async function setSessionCookie(payload: SessionPayload) {
     path: "/",
     maxAge: 60 * 60 * 2, // 2 hours
   });
+}
+
+export async function verifySessionToken(
+  token: string,
+): Promise<SessionPayload | null> {
+  try {
+    const { payload } = await jwtVerify(
+      token,
+      new TextEncoder().encode(process.env.JWT_SECRET || "default_secret"),
+    );
+
+    return {
+      userId: payload.sub as string,
+      email: payload.email as string,
+      role: payload.role as string,
+    };
+  } catch (err) {
+    console.error("Invalid session token:", err);
+    return null;
+  }
+}
+
+export async function getSession(): Promise<SessionPayload | null> {
+  const store = await cookies();
+  const token = store.get("session")?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  return verifySessionToken(token);
+}
+
+export async function clearSessionCookie() {
+  const store = await cookies();
+  store.delete("session");
 }

@@ -3,14 +3,39 @@
 import { CartButton } from "@/components/CartButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
-import { Coffee } from "lucide-react";
+import { Coffee, LogOut } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { Button } from "./ui/button";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const NAV = [{ href: "/menu", label: "เมนู" }] as const;
 
 export const SiteHeader = () => {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const { mutateAsync } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+      if (!res.ok) {
+        throw new Error("Logout failed");
+      }
+    },
+  });
+
+  const handleLogout = async () => {
+    try {
+      await mutateAsync();
+      router.push("/login");
+    } catch (error) {
+      toast.error("Logout failed. Please try again.");
+      console.error("Logout error:", error);
+    }
+  };
 
   // Hide chrome on auth pages so login/register read as focused screens.
   if (pathname === "/login" || pathname === "/register") {
@@ -54,6 +79,9 @@ export const SiteHeader = () => {
         <div className="ml-auto flex items-center gap-1.5">
           <ThemeToggle />
           <CartButton />
+          <Button variant="outline" size="icon">
+            <LogOut />
+          </Button>
         </div>
       </div>
     </header>
