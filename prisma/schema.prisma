@@ -35,6 +35,7 @@ model Product {
   name        String
   price       Float
   description String?
+  imageUrl    String?
   createdAt   DateTime    @default(now())
   deletedAt   DateTime?
   orderItems  OrderItem[]
