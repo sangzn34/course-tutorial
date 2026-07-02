@@ -1,7 +1,11 @@
+import { requireRole } from "@/lib/auth/session";
 import { Product } from "@/lib/generated/prisma/browser";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
+  const auth = await requireRole("ADMIN");
+  if (auth instanceof Response) return auth;
+
   const body = (await request.json()) as Product;
   const newProduct = await prisma.product.create({
     data: {

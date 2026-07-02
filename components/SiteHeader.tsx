@@ -79,7 +79,7 @@ export const SiteHeader = () => {
         <div className="ml-auto flex items-center gap-1.5">
           <ThemeToggle />
           <CartButton />
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" onClick={handleLogout}>
             <LogOut />
           </Button>
         </div>

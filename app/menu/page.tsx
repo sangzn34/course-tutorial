@@ -2,6 +2,7 @@
 
 import { ProductCard } from "@/components/ProductCard";
 import { addToCartAtom } from "@/lib/cart";
+import { useMe } from "@/lib/use-me";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSetAtom } from "jotai/react";
 import Link from "next/link";
@@ -17,6 +18,7 @@ type MenuItem = {
 };
 
 const MenuPage = () => {
+  const { isAdmin } = useMe();
   const { data, isLoading, error, refetch } = useQuery<MenuItem[]>({
     queryKey: ["menu"],
     queryFn: () =>
@@ -57,12 +59,14 @@ const MenuPage = () => {
 
   return (
     <div className="p-10">
-      <Link
-        href="/menu/create"
-        className="p-2 border bg-blue-500 text-white rounded"
-      >
-        Create Product
-      </Link>
+      {isAdmin && (
+        <Link
+          href="/menu/create"
+          className="p-2 border bg-blue-500 text-white rounded"
+        >
+          Create Product
+        </Link>
+      )}
       <input
         type="text"
         placeholder="Search..."

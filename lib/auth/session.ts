@@ -71,3 +71,14 @@ export async function clearSessionCookie() {
   const store = await cookies();
   store.delete("session");
 }
+
+export async function requireRole(role: SessionPayload["role"]) {
+  const session = await getSession();
+  if (!session) {
+    return Response.json({ message: "Unauthorized" }, { status: 401 });
+  }
+  if (session.role !== role) {
+    return Response.json({ message: "Forbidden" }, { status: 403 });
+  }
+  return session;
+}
