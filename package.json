@@ -15,6 +15,9 @@
     "db:migrate:reset": "prisma migrate reset",
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
+    "db:deploy": "ENV_FILE=.env.supabase prisma migrate deploy",
+    "db:studio:prod": "ENV_FILE=.env.supabase prisma studio",
+    "db:seed:prod": "ENV_FILE=.env.supabase prisma db seed",
     "test": "vitest run"
   },
   "dependencies": {
