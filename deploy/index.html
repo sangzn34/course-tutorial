@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0c0d12; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+<!-- ░░ SLIDE 1 — TITLE ░░ -->
+<section data-label="Title" data-screen-label="01" data-speaker-notes="เด็คสุดท้ายของคอร์ส: เอาแอปที่รันบนเครื่องขึ้น production จริง — DB ไป Supabase, แอปไป Vercel, เปิดด้วย domain ของเราเอง ลำดับสำคัญมาก harden ก่อน แล้ว supabase ก่อน vercel เพราะ vercel เขียนไฟล์ลงดิสก์ไม่ได้">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:96px 100px;display:flex;flex-direction:column;justify-content:center;background:radial-gradient(120% 120% at 100% 0%, #1b1d2b 0%, #15161e 42%, #111219 100%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:34px;">
+      <span style="width:13px;height:13px;border-radius:50%;background:#73daca;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#787c99;letter-spacing:3px;text-transform:uppercase;">Food-Ordering App · Dev Workshop</span>
+    </div>
+    <h1 style="font-size:92px;line-height:1.04;font-weight:700;color:#f0f2ff;margin:0;letter-spacing:-1.5px;max-width:1500px;">Deploy: ขึ้น <span style="color:#73daca;">production</span> จริง</h1>
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:38px;color:#9aa3c4;margin:28px 0 0;letter-spacing:-0.5px;">local → Supabase · Vercel · domain + https</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:56px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">Supabase Postgres</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">Vercel</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">custom domain</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">harden ก่อนขึ้น</span>
+    </div>
+    <p style="font-size:27px;color:#6c7290;margin:64px 0 0;">สำหรับมือใหม่ React / Next.js · เนื้อหาภาษาไทย · keyword อังกฤษ</p>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 2 — OVERVIEW / ORDER ░░ -->
+<section data-label="ลำดับ" data-screen-label="02" data-speaker-notes="หัวใจของเด็คนี้คือลำดับ ทำไม harden ก่อน เพราะ deploy คือ public ทันที ทำไม supabase ก่อน vercel เพราะ vercel เป็น serverless เขียนไฟล์ลงดิสก์ไม่ได้ ต้องมี storage บนคลาวด์พร้อมก่อน domain ไว้ท้ายสุดเพราะต้องมีแอปที่ deploy สำเร็จก่อน">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">02</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Why This Order</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">ลำดับ <span style="color:#73daca;">0 → 1 → 2 → 3</span> มีเหตุผล</h2>
+
+    <div style="display:flex;align-items:stretch;gap:16px;flex:1;margin-top:50px;">
+      <div style="flex:1;background:#211a22;border:1px solid #4a3050;border-radius:16px;padding:30px 26px;display:flex;flex-direction:column;gap:12px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:23px;color:#d98aa8;letter-spacing:1px;">STEP 0</span>
+        <span style="font-size:32px;font-weight:600;color:#e6eaff;">Harden</span>
+        <span style="font-size:24px;line-height:1.4;color:#c5cce6;">ปิดช่องโหว่ก่อน — deploy = public ทันที</span>
+      </div>
+      <div style="display:flex;align-items:center;font-size:40px;color:#73daca;">→</div>
+      <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:16px;padding:30px 26px;display:flex;flex-direction:column;gap:12px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:23px;color:#73daca;letter-spacing:1px;">STEP 1</span>
+        <span style="font-size:32px;font-weight:600;color:#e6eaff;">Supabase</span>
+        <span style="font-size:24px;line-height:1.4;color:#d5dcec;">DB + Storage พร้อม ก่อน Vercel ต้องใช้</span>
+      </div>
+      <div style="display:flex;align-items:center;font-size:40px;color:#73daca;">→</div>
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:16px;padding:30px 26px;display:flex;flex-direction:column;gap:12px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:23px;color:#73daca;letter-spacing:1px;">STEP 2</span>
+        <span style="font-size:32px;font-weight:600;color:#e6eaff;">Vercel</span>
+        <span style="font-size:24px;line-height:1.4;color:#9aa3c4;">deploy แอป → ได้ *.vercel.app</span>
+      </div>
+      <div style="display:flex;align-items:center;font-size:40px;color:#73daca;">→</div>
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:16px;padding:30px 26px;display:flex;flex-direction:column;gap:12px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:23px;color:#73daca;letter-spacing:1px;">STEP 3</span>
+        <span style="font-size:32px;font-weight:600;color:#e6eaff;">Domain</span>
+        <span style="font-size:24px;line-height:1.4;color:#9aa3c4;">ชี้ domain มา + https อัตโนมัติ</span>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">Vercel เป็น <b style="color:#73daca;font-weight:600;">serverless</b> — เขียนไฟล์ลงดิสก์ไม่ได้ จึงต้องมี Supabase Storage <b style="color:#e6eaff;font-weight:600;">ก่อน</b> deploy</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 3 — STEP 0 HARDENING ░░ -->
+<section data-label="Harden" data-screen-label="03" data-speaker-notes="ก่อน deploy ต้องปิดช่องโหว่ที่ค้าง: login ยังไม่เช็ครหัสจริง, มี log รหัสผ่าน, JWT_SECRET มี fallback ค่า default ที่ใครก็เดาได้, upload ยังไม่ gate admin, allowlist มี octet-stream ที่ทะลุได้ ย้ำ secret ต้อง fail fast ถ้าไม่มี ดีกว่าเงียบๆ ใช้ค่า default">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">03</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Step 0 · Harden ก่อน Public</span>
+    </div>
+    <h2 style="font-size:52px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">"ยัง dev อยู่" ไม่ใช่ข้ออ้าง — <span style="color:#73daca;">deploy = public</span></h2>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:32px;">
+      <div style="flex:0 0 42%;display:flex;flex-direction:column;gap:16px;padding-top:4px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#d98aa8;font-size:26px;">✗</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;">login ยัง <b style="color:#e6eaff;">ไม่เช็ครหัสจริง</b> (verifyPassword ถูก comment)</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#d98aa8;font-size:26px;">✗</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#d98aa8;">console.log</code> รหัสผ่าน plaintext</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#d98aa8;font-size:26px;">✗</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#d98aa8;">JWT_SECRET || "default"</code> — เดาได้ = ปลอม token</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#d98aa8;font-size:26px;">✗</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#d98aa8;">/api/upload</code> ยังไม่ gate admin</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#d98aa8;font-size:26px;">✗</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;">allowlist มี <code style="font-family:'IBM Plex Mono',monospace;color:#d98aa8;">octet-stream</code> — ทะลุได้</span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">secret ต้อง fail fast</span></div>
+        <pre style="margin:0;padding:24px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.6;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code0 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">ค่าลับที่หายไปต้อง <b style="color:#73daca;font-weight:600;">error ทันที (fail fast)</b> — ห้ามเงียบๆ ใช้ค่า default</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 4 — STEP 1a SUPABASE POSTGRES ░░ -->
+<section data-label="Supabase DB" data-screen-label="04" data-speaker-notes="Supabase ให้ 2 connection: pooled port 6543 สำหรับแอป (serverless เปิดปิด connection ถี่ ต้องผ่าน pooler ไม่งั้นเต็ม) และ direct port 5432 สำหรับ migration แยกด้วย env: DATABASE_URL คือ pooled ที่ adapter ใช้ตอน runtime, DIRECT_URL คือ direct ที่ prisma.config ใช้ตอน migrate ย้ำใช้ migrate deploy ไม่ใช่ migrate dev">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:64px 92px 56px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">04</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Step 1a · Supabase Postgres</span>
+    </div>
+    <h2 style="font-size:50px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">2 connection: <span style="color:#73daca;">pooled</span> (แอป) กับ <span style="color:#73daca;">direct</span> (migrate)</h2>
+
+    <div style="display:flex;align-items:stretch;gap:16px;margin-top:26px;">
+      <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:14px;padding:22px 26px;display:flex;flex-direction:column;gap:6px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:23px;color:#73daca;">DATABASE_URL · pooled : 6543</span>
+        <span style="font-size:25px;color:#d5dcec;">runtime — adapter ใน lib/prisma.ts (serverless ต้องผ่าน pooler)</span>
+      </div>
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;padding:22px 26px;display:flex;flex-direction:column;gap:6px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:23px;color:#9aa3c4;">DIRECT_URL · direct : 5432</span>
+        <span style="font-size:25px;color:#c5cce6;">migration — prisma.config ใช้ DIRECT_URL ก่อน</span>
+      </div>
+    </div>
+
+    <div style="flex:1;min-height:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;margin-top:16px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">.env.supabase (gitignored) · prisma.config.ts · package.json</span></div>
+      <pre style="margin:0;padding:22px 30px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.5;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code1a }}</pre>
+    </div>
+
+    <div style="margin-top:20px;padding-top:18px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">prod ใช้ <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">db:deploy</code> = <b style="color:#73daca;font-weight:600;">migrate deploy</b> ไม่ใช่ migrate dev</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 5 — STEP 1b SUPABASE STORAGE ░░ -->
+<section data-label="Supabase Storage" data-screen-label="05" data-speaker-notes="เติมสาขา supabase ที่เด็ค upload ทิ้ง stub ไว้ ใช้ service_role key ซึ่งข้าม RLS ได้ทั้งหมด จึงต้องอยู่ฝั่ง server เท่านั้น ห้ามหลุดไป client bucket ตั้งเป็น public read เพื่อให้เสิร์ฟรูปผ่าน CDN ได้">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">05</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Step 1b · Supabase Storage</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">เติม stub ที่เด็ค upload เว้นไว้: <span style="color:#73daca;">supabase driver</span></h2>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:32px;">
+      <div style="flex:1.15;min-width:0;background:#16221d;border:1px solid #2f5045;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2f5045;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;">lib/storage.ts · สาขา supabase</span></div>
+        <pre style="margin:0;padding:24px 28px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.52;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code1b }}</pre>
+      </div>
+      <div style="flex:0 0 34%;display:flex;flex-direction:column;gap:18px;padding-top:4px;">
+        <div style="background:#211d16;border:1px solid #5a4a28;border-radius:12px;padding:18px 22px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#e0b15a;font-weight:600;margin-bottom:6px;">service_role key</div>
+          <div style="font-size:24px;color:#c5cce6;line-height:1.35;">ข้าม RLS ได้หมด → <b style="color:#e6eaff;">server เท่านั้น</b> ห้ามหลุดไป client</div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:26px;">▸</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;">bucket <b style="color:#e6eaff;">public read</b> → เสิร์ฟผ่าน CDN</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:26px;">▸</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">STORAGE_DRIVER=supabase</code> สลับ backend</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:26px;">▸</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;">โดเมน supabase ต้องอยู่ใน <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">remotePatterns</code></span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">key ที่ข้าม RLS ได้ = <b style="color:#73daca;font-weight:600;">ฝั่ง server เท่านั้น</b> — เก็บใน env ไม่ใช่โค้ด client</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 6 — STEP 2 VERCEL ░░ -->
+<section data-label="Vercel" data-screen-label="06" data-speaker-notes="import repo Vercel detect Next 16 เอง ประเด็น build: repo generate prisma client ออกไป lib/generated ต้อง prisma generate ตอน build ไม่งั้น fail ใส่ postinstall เลยง่ายสุด แล้วตั้ง env ให้ครบ ย้ำ JWT_SECRET ต้องสุ่มจริง cookie secure ทำงานเพราะ prod เป็น https">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">06</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Step 2 · Deploy บน Vercel</span>
+    </div>
+    <h2 style="font-size:52px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">import repo → ตั้ง env → deploy</h2>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:32px;">
+      <div style="flex:0 0 40%;display:flex;flex-direction:column;gap:18px;padding-top:4px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">Vercel detect <b style="color:#e6eaff;">Next.js 16</b> ให้เอง</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">ต้อง <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">prisma generate</code> ตอน build ไม่งั้น build fail</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">prod เป็น https → cookie <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">secure:true</code> ทำงาน</span></div>
+        <div style="background:#211a22;border:1px solid #4a3050;border-radius:12px;padding:16px 20px;margin-top:6px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#d98aa8;font-weight:600;margin-bottom:4px;">JWT_SECRET</div>
+          <div style="font-size:24px;color:#c5cce6;line-height:1.35;">สุ่มจริง <code style="font-family:'IBM Plex Mono',monospace;color:#e6eaff;">openssl rand -base64 32</code> — ห้าม default</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">build + Environment Variables</span></div>
+        <pre style="margin:0;padding:22px 28px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.5;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code2 }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">public/uploads</code> ใช้ไม่ได้บน serverless — เพราะทำ storage adapter ไว้ <b style="color:#73daca;font-weight:600;">แค่เปลี่ยน env</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 7 — STEP 3 DOMAIN ░░ -->
+<section data-label="Domain" data-screen-label="07" data-speaker-notes="เพิ่ม domain ใน Vercel แล้วตั้ง DNS ตามที่มันบอก apex ใช้ A record ชี้ IP เพราะ apex ใส่ CNAME ตรงๆไม่ได้ตามสเปค DNS ส่วน www ใช้ CNAME Vercel ออก HTTPS ให้อัตโนมัติผ่าน Let's Encrypt ไม่ต้องซื้อ cert เอง">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">07</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Step 3 · Domain + HTTPS</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">ชี้ domain มา Vercel — <span style="color:#73daca;">https</span> อัตโนมัติ</h2>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">DNS records (ตั้งที่ผู้ให้บริการ domain)</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:25px;line-height:1.7;white-space:pre;color:#c0caf5;overflow:hidden;">{{ code3 }}</pre>
+      </div>
+      <div style="flex:0 0 40%;display:flex;flex-direction:column;gap:18px;padding-top:4px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;"><b style="color:#e6eaff;">apex</b> ใช้ <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">A</code> (ชี้ IP) — apex ใส่ CNAME ตรงๆ ไม่ได้</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;"><b style="color:#e6eaff;">www</b> ใช้ <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">CNAME</code> (ชี้ชื่ออื่น)</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">TLS อัตโนมัติ (Let's Encrypt) — <b style="color:#e6eaff;">ไม่ต้องซื้อ cert</b></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">ตั้ง primary + redirect www ↔ apex</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">apex = <b style="color:#73daca;font-weight:600;">A record</b>, subdomain = <b style="color:#73daca;font-weight:600;">CNAME</b> — https ต่อให้เองไม่ต้องซื้อ cert</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 8 — DEV vs PROD DB ░░ -->
+<section data-label="dev vs prod" data-screen-label="08" data-speaker-notes="คำถามที่เจอบ่อย: แยก DB dev prod ไหม ห้ามรวมเป็นตัวเดียวเด็ดขาดเพราะ migrate reset seed ลองผิดลองถูกจะล้างข้อมูล prod ทางที่แนะนำสำหรับโปรเจกต์เรียนคือ dev ใช้ docker บนเครื่อง prod ใช้ Supabase หนึ่ง project แยกด้วย env file ถ้าอยากให้ dev อยู่ Supabase ด้วยให้สร้าง 2 project แยก free tier ได้ 2">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:radial-gradient(120% 130% at 50% -10%, #1c1e2c 0%, #15161e 55%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">08</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">แยก DB dev / prod ไหม?</span>
+    </div>
+    <h2 style="font-size:52px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">อย่ารวมเป็น DB เดียว — <span style="color:#d98aa8;">reset/seed ล้าง prod</span></h2>
+
+    <div style="display:flex;flex:1;min-height:0;margin-top:44px;align-items:stretch;gap:26px;">
+      <div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#16221d;border:1px solid #2f5045;border-radius:16px;padding:30px 32px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">แนะนำ · โปรเจกต์เรียน</span>
+        <span style="font-size:32px;font-weight:600;color:#e6eaff;">local docker = dev<br>Supabase = prod</span>
+        <div style="height:1px;background:#2f5045;margin:4px 0;"></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:26px;color:#d5dcec;line-height:1.4;"><span style="color:#73daca;">✓</span><span>local เร็ว ฟรี reset ได้ตามใจ</span></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:26px;color:#d5dcec;line-height:1.4;"><span style="color:#73daca;">✓</span><span>แยกด้วย env file — <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">.env</code> / <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">.env.supabase</code></span></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:26px;color:#d5dcec;line-height:1.4;"><span style="color:#73daca;">✓</span><span>Supabase 1 project พอ</span></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:16px;background:#1a1b26;border:1px solid #2a2f45;border-radius:16px;padding:30px 32px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#9aa3c4;font-weight:600;">ถ้าอยากให้ dev อยู่ Supabase ด้วย</span>
+        <span style="font-size:32px;font-weight:600;color:#e6eaff;">2 projects แยก</span>
+        <div style="height:1px;background:#2a2f45;margin:4px 0;"></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:26px;color:#c5cce6;line-height:1.4;"><span style="color:#73daca;">✓</span><span><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">coffee-dev</code> + <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">coffee-prod</code> คนละ URL</span></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:26px;color:#c5cce6;line-height:1.4;"><span style="color:#73daca;">✓</span><span>free tier ได้ 2 projects</span></div>
+        <div style="display:flex;gap:12px;align-items:flex-start;font-size:26px;color:#c5cce6;line-height:1.4;"><span style="color:#d98aa8;">✗</span><span>ห้าม project เดียวใช้ทั้ง dev + prod</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">DB ที่ <b style="color:#73daca;font-weight:600;">reset/seed ได้</b> ต้องแยกจาก DB ที่มีข้อมูลจริงเสมอ</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 9 — TAKEAWAYS ░░ -->
+<section data-label="สรุป" data-screen-label="09" data-speaker-notes="ทบทวน 6 ข้อ ปิดท้ายว่าเพราะออกแบบด้วย env + adapter มาตั้งแต่ต้น การขึ้น prod จึงเหลือแค่ตั้งค่า ไม่ต้องรื้อโค้ด">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:80px 100px;display:flex;flex-direction:column;background:radial-gradient(120% 120% at 0% 100%, #1b1d2b 0%, #15161e 45%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">09</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Takeaways</span>
+    </div>
+    <h2 style="font-size:62px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0 0 48px;letter-spacing:-1px;">6 ข้อที่ต้องจำกลับบ้าน</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px 64px;flex:1;align-content:center;">
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">harden ก่อน deploy</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">deploy = public ทันที — ปิดช่องโหว่ให้หมดก่อน</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">pooled vs direct</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">แอปใช้ pooled (6543), migrate ใช้ direct (5432)</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">migrate deploy ไม่ใช่ dev</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">prod ใช้ db:deploy — apply อย่างเดียว ไม่ interactive</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">serverless เขียนดิสก์ไม่ได้</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">public/uploads ไม่รอด → storage adapter (Supabase)</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">secret fail fast</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">ไม่มี JWT_SECRET = error ทันที ห้าม default</div></div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <span style="font-size:30px;flex:0 0 auto;">⭐</span>
+        <div><div style="font-size:30px;font-weight:600;color:#f0f2ff;margin-bottom:4px;">domain = A + CNAME</div><div style="font-size:25px;color:#9aa3c4;line-height:1.4;">apex=A, www=CNAME · https อัตโนมัติ</div></div>
+      </div>
+    </div>
+
+    <p style="font-size:28px;color:#787c99;margin:40px 0 0;border-top:1px solid #2a2f45;padding-top:28px;">Deploy · Supabase + Vercel + Domain &nbsp;·&nbsp; <span style="color:#73daca;">ขอบคุณครับ 🙏</span></p>
+  </div>
+</section>
+
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  hl(code) {
+    const R = React;
+    const C = {
+      com: '#5f6b85', str: '#9ece6a', kw: '#bb9af7',
+      fn: '#7aa2f7', type: '#7dcfff', num: '#ff9e64'
+    };
+    const re = /(\/\/[^\n]*|#[^\n]*)|(`[^`]*`|"[^"]*"|'[^']*')|\b(const|let|var|function|return|if|else|await|async|export|import|from|new|try|catch|throw|typeof|type|interface|class|extends|this|of|in|as|default|void)\b|\b(true|false|null|undefined|\d[\w_]*)\b|([A-Za-z_$][\w$]*)(?=\s*\()|\b([A-Z][\w$]*)\b/g;
+    const out = [];
+    let last = 0, m, k = 0;
+    while ((m = re.exec(code)) !== null) {
+      if (m.index > last) out.push(code.slice(last, m.index));
+      let color = null, italic = false;
+      if (m[1]) { color = C.com; italic = true; }
+      else if (m[2]) color = C.str;
+      else if (m[3]) color = C.kw;
+      else if (m[4]) color = C.num;
+      else if (m[5]) color = C.fn;
+      else if (m[6]) color = C.type;
+      const st = { color };
+      if (italic) st.fontStyle = 'italic';
+      out.push(R.createElement('span', { key: k++, style: st }, m[0]));
+      last = re.lastIndex;
+    }
+    if (last < code.length) out.push(code.slice(last));
+    return out;
+  }
+
+  renderVals() {
+    const code0 = `// lib/auth/session.ts — ห้าม fallback ค่า default
+function getSecret() {
+  const s = process.env.JWT_SECRET
+  if (!s) throw new Error("JWT_SECRET is not set")  // fail fast
+  return new TextEncoder().encode(s)
+}
+
+// app/api/auth/login/route.ts — เช็ครหัสจริง (เลิก comment)
+if (!user || !(await verifyPassword(password, user.passwordHash)))
+  return Response.json({ message: "..." }, { status: 401 })`;
+
+    const code1a = `# .env.supabase  (gitignored)
+DATABASE_URL="...pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="...db.<ref>.supabase.co:5432/postgres"
+
+// prisma.config.ts — migrate ใช้ direct ก่อน
+url: process.env.DIRECT_URL ?? process.env.DATABASE_URL
+
+// package.json
+"db:deploy": "ENV_FILE=.env.supabase prisma migrate deploy"`;
+
+    const code1b = `if (process.env.STORAGE_DRIVER === "supabase") {
+  const supabase = createClient(URL, SERVICE_ROLE_KEY)
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(name, bytes, { contentType: file.type })
+  if (error) throw new UploadError(error.message)
+  return supabase.storage.from(BUCKET)
+    .getPublicUrl(name).data.publicUrl
+}`;
+
+    const code2 = `// package.json — Vercel ต้อง generate ตอน build
+"postinstall": "prisma generate"
+
+// Environment Variables (ตั้งใน Vercel dashboard)
+DATABASE_URL      = <pooled 6543>
+DIRECT_URL        = <direct 5432>
+JWT_SECRET        = <openssl rand -base64 32>
+STORAGE_DRIVER    = supabase
+SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_BUCKET`;
+
+    const code3 = `# type   host                value
+A        mycoffee.com        76.76.21.21
+CNAME    www.mycoffee.com    cname.vercel-dns.com`;
+
+    return {
+      code0: this.hl(code0),
+      code1a: this.hl(code1a),
+      code1b: this.hl(code1b),
+      code2: this.hl(code2),
+      code3: this.hl(code3),
+    };
+  }
+}
+</script>
+</body>
+</html>
