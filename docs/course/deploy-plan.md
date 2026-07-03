@@ -65,22 +65,21 @@
   - **Pooled** (Supavisor, port `6543`, transaction mode) → ใช้เป็น `DATABASE_URL` ของ **แอป** (serverless เปิด/ปิด connection ถี่ → ต้องผ่าน pooler ไม่งั้น connection เต็ม)
   - **Direct** (port `5432`) → ใช้เป็น `DIRECT_URL` สำหรับ **รัน migration** (migration ต้องการ direct connection)
 
-### 1b. ต่อ Prisma เข้า Supabase
-- schema datasource เพิ่ม `directUrl`:
-  ```prisma
-  datasource db {
-    provider  = "postgresql"
-    url       = env("DATABASE_URL")   // pooled — runtime
-    directUrl = env("DIRECT_URL")     // direct — migrate
-  }
-  ```
-- `.env` (local ยังชี้ docker ได้; prod ตั้งใน Vercel) — pooled url เติม `?pgbouncer=true`
-- **รัน migration ขึ้น Supabase ด้วย `prisma migrate deploy`** ไม่ใช่ `migrate dev`:
+### 1b. ต่อ Prisma เข้า Supabase (Prisma 7 driver-adapter)
+repo นี้ใช้ **driver adapter** (`@prisma/adapter-pg`) — runtime ต่อผ่าน `PrismaPg({ connectionString: DATABASE_URL })` ใน [lib/prisma.ts](../../lib/prisma.ts); migration ต่อผ่าน `prisma.config.ts`. ไม่ได้อ่าน url จาก schema datasource block. การแยก pooled/direct จึงทำที่ **env + prisma.config** ไม่ใช่ schema:
+
+- 2 connection ต่อ 2 หน้าที่:
+  - `DATABASE_URL` = **pooled** (6543, `?pgbouncer=true`) → runtime (adapter)
+  - `DIRECT_URL` = **direct** (5432) → migration (prisma.config ใช้ `DIRECT_URL ?? DATABASE_URL`)
+- `prisma.config.ts` เพิ่ม env-file switch แล้ว: `ENV_FILE` ชี้ไฟล์ env (`.env` local / `.env.supabase` prod)
+- scripts พร้อมใช้ (ทำใน commit `50e0638`):
   ```sh
-  pnpm dlx prisma migrate deploy      # apply migration ที่มีอยู่ ไม่ generate ใหม่ ไม่ interactive
+  pnpm db:deploy       # ENV_FILE=.env.supabase prisma migrate deploy  → apply ขึ้น Supabase
+  pnpm db:studio:prod  # เปิด Studio ชี้ Supabase
   ```
-  > ⚠️ repo นี้เปิด `previewFeatures = ["partialIndexes"]` + `migrate dev` แบบ non-interactive เคยพัง (ดู memory) → `migrate deploy` คือทางที่ถูกสำหรับ remote/prod
-- seed admin บน Supabase: `pnpm db:seed` (ชี้ env ไป Supabase) → มี admin คนแรกใน prod
+  > ⚠️ ใช้ `migrate deploy` ไม่ใช่ `migrate dev` — repo เปิด `previewFeatures = ["partialIndexes"]` + `migrate dev` non-interactive เคยพัง (ดู memory)
+- `.env.supabase` (gitignored) = template มีให้แล้ว — เติม connection string จริงจาก Supabase dashboard
+- seed admin บน Supabase: `pnpm db:seed:prod` (ต้องตั้ง `seed` ใน prisma.config + มี `prisma/seed.ts` ก่อน — ดู Step 1 งานย่อย)
 
 ### 1c. Supabase Storage → implement stub ใน `lib/storage.ts`
 - สร้าง bucket เช่น `product-images` (public read)
