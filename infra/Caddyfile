@@ -1,0 +1,3 @@
+coffee.successo-studio.com {
+	reverse_proxy app:3000
+}

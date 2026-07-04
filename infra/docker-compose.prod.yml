@@ -1,0 +1,47 @@
+# Prod stack บน VPS — เฟส 1: app + Caddy (DB = Supabase ภายนอก, Storage = local volume)
+#
+# วางไฟล์นี้ + Caddyfile ที่ /srv/coffee/ บน VPS แล้ว: docker compose -f docker-compose.prod.yml up -d
+# ต้องมี /srv/coffee/.env (chmod 600, ไม่อยู่ใน git) อย่างน้อย:
+#   DATABASE_URL="<Supabase pooled 6543 ?pgbouncer=true>"
+#   JWT_SECRET="<openssl rand -base64 32>"
+#   STORAGE_DRIVER=local
+# (DIRECT_URL ใช้เฉพาะตอน migrate — รันจาก CI/V3 ไม่ต้องมีในนี้)
+
+services:
+  app:
+    image: ${IMAGE:-ghcr.io/OWNER/coffee:latest} # V3 CI push image; แก้ OWNER หรือ set $IMAGE
+    container_name: coffee-app
+    env_file: /srv/coffee/.env
+    environment:
+      - STORAGE_DRIVER=local # กันพลาด: บังคับ local (VPS disk) แม้ .env ลืมตั้ง
+    volumes:
+      - uploads:/app/public/uploads # รูปอยู่บน disk — redeploy ไม่หาย
+    expose:
+      - '3000' # คุยแค่ในเน็ตเวิร์ก compose (Caddy → app) ไม่ publish ออก host
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:3000/']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: coffee-caddy
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # cert Let's Encrypt เก็บที่นี่ — อย่าลบ ไม่งั้นขอใหม่ทุก deploy (โดน rate limit)
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  uploads:
+  caddy_data:
+  caddy_config:
