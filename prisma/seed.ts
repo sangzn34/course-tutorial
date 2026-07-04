@@ -1,30 +1,46 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../lib/generated/prisma/client";
+import { hashPassword } from "../lib/auth/password";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-const items = [
-  { id: "1", name: "Espresso", nameTh: "เอสเพรสโซ่", category: "hot", price: 55, description: "Single shot, intense and full-bodied.", available: true },
-  { id: "2", name: "Americano", nameTh: "อเมริกาโน่", category: "hot", price: 60, description: "Espresso diluted with hot water.", available: true },
-  { id: "3", name: "Cappuccino", nameTh: "คาปูชิโน่", category: "hot", price: 70, description: "Equal parts espresso, steamed milk, and foam.", available: true },
-  { id: "4", name: "Caffe Latte", nameTh: "ลาเต้", category: "hot", price: 70, description: "Espresso with steamed milk and a thin layer of foam.", available: true },
-  { id: "5", name: "Iced Americano", nameTh: "อเมริกาโน่เย็น", category: "iced", price: 65, description: "Chilled espresso over ice and cold water.", available: true },
-  { id: "6", name: "Iced Latte", nameTh: "ลาเต้เย็น", category: "iced", price: 75, description: "Espresso and cold milk over ice.", available: true },
-  { id: "7", name: "Mocha Frappe", nameTh: "มอคค่าปั่น", category: "blended", price: 90, description: "Blended espresso, chocolate, milk, and ice.", available: false },
-  { id: "8", name: "Thai Coffee", nameTh: "กาแฟโบราณ", category: "iced", price: 50, description: "Traditional Thai-style sweetened iced coffee.", available: true },
+// ฟิลด์ตรง schema จริง: name / price(Float) / description? (ไม่มี nameTh/category/available)
+const products = [
+  { name: "Espresso", price: 55, description: "Single shot, intense and full-bodied." },
+  { name: "Americano", price: 60, description: "Espresso diluted with hot water." },
+  { name: "Cappuccino", price: 70, description: "Equal parts espresso, steamed milk, and foam." },
+  { name: "Caffe Latte", price: 70, description: "Espresso with steamed milk and a thin layer of foam." },
+  { name: "Iced Americano", price: 65, description: "Chilled espresso over ice and cold water." },
+  { name: "Iced Latte", price: 75, description: "Espresso and cold milk over ice." },
+  { name: "Mocha Frappe", price: 90, description: "Blended espresso, chocolate, milk, and ice." },
+  { name: "Thai Coffee", price: 50, description: "Traditional Thai-style sweetened iced coffee." },
 ];
 
 async function main() {
-  for (const item of items) {
-    await prisma.product.upsert({
-      where: { id: item.id },
-      update: item,
-      create: item,
+  // products — idempotent: สร้างเฉพาะที่ยังไม่มี (เทียบชื่อ)
+  for (const p of products) {
+    const exists = await prisma.product.findFirst({ where: { name: p.name } });
+    if (!exists) await prisma.product.create({ data: p });
+  }
+
+  // admin — เอาค่าจาก env (prod ตั้ง SEED_ADMIN_*), มี default ให้ dev
+  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@coffee.local";
+  const password = process.env.SEED_ADMIN_PASSWORD ?? "changeme123";
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (!existing) {
+    await prisma.user.create({
+      data: {
+        email,
+        name: "Admin",
+        passwordHash: await hashPassword(password),
+        role: "ADMIN",
+      },
     });
   }
-  console.log(`Seeded ${items.length} products.`);
+
+  console.log(`Seeded ${products.length} products + admin (${email}).`);
 }
 
 main()
