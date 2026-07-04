@@ -46,7 +46,8 @@ ssh -i ~/.ssh/coffee_deploy deploy@66.42.54.32
    ```sh
    git push origin main       # ⚠️ trigger pipeline ทันที — ตั้ง Secrets (ข้อ 2) ให้ครบก่อน
    ```
-2. **Secrets** — repo → Settings → Secrets and variables → Actions → New repository secret (4 ตัว):
+2. **Secrets** — repo → Settings → Secrets and variables → Actions → แท็บ **Secrets** (❌ **ไม่ใช่ Variables**) → New repository secret (4 ตัว):
+   > ⚠️ ต้องเป็น **Secrets** ไม่ใช่ **Variables** — workflow อ่าน `secrets.*`; และ Variables เป็น plaintext (private key/รหัส DB จะโผล่). ใส่ผิดแท็บ = pipeline หาไม่เจอ + ความลับหลุด
    | Name | Value | มาจาก |
    |---|---|---|
    | `DATABASE_URL` | Supabase pooled 6543 | A.2 |
