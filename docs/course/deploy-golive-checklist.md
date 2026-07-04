@@ -68,6 +68,10 @@ ssh -i ~/.ssh/coffee_deploy deploy@66.42.54.32
 
 ## E. First deploy
 
+> **ทำไมต้องวางอีก ทั้งที่ตั้งใน GitHub แล้ว?** — คนละที่ คนละคนใช้:
+> **GitHub** vars/secrets = ใช้ตอน **pipeline รัน** (migrate job ต่อ Supabase, deploy job ssh) · **`/srv/coffee/.env`** = ใช้ตอน **app container รันจริง** (compose `env_file`) — GitHub ไม่ยัด env เข้า container, container อ่านไฟล์นี้เอง
+> `DATABASE_URL` เลยซ้ำ 2 ที่ (CI migrate + app runtime) · `JWT_SECRET` อยู่แค่นี่ (แอปใช้ตอน login, CI ไม่ต้อง)
+
 1. **วาง `/srv/coffee/.env` บน VPS** (ทำมือครั้งเดียว — CI ไม่แตะไฟล์นี้):
    ```sh
    # ssh deploy@66.42.54.32 แล้ว:
