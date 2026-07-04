@@ -106,8 +106,11 @@
 
 ## Step V2 — Compose + Caddy: reverse proxy + HTTPS อัตโนมัติ
 
+> ✅ **ไฟล์จริงเขียนแล้ว:** [infra/docker-compose.prod.yml](../../infra/docker-compose.prod.yml) + [infra/Caddyfile](../../infra/Caddyfile)
+> ยังต้อง: แก้ `OWNER` ใน image (หรือ set `$IMAGE`) หลัง V3 push GHCR · สร้าง `/srv/coffee/.env` บน VPS · ตั้ง A record `coffee` → 66.42.54.32 (เมฆเทา)
+
 ### เป้าหมาย
-เปิด `https://coffee.yourdomain.com` จาก VPS ได้ แม่กุญแจเขียว ไม่แตะ cert เองเลย
+เปิด `https://coffee.successo-studio.com` จาก VPS ได้ แม่กุญแจเขียว ไม่แตะ cert เองเลย
 
 ### ขั้นตอน
 1. **`infra/docker-compose.prod.yml`** — 2 services:
