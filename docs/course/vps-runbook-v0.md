@@ -39,6 +39,9 @@ docker run --rm hello-world   # เทสว่ารันได้
 ### 5. โฟลเดอร์แอป + swap (เครื่อง 2GB)
 ```sh
 mkdir -p /srv/coffee          # ไว้วาง .env, compose, Caddyfile ทีหลัง (V2)
+# ⚠️ dir นี้เป็นของ root — หลังสร้าง user deploy (§A) ต้อง chown ให้ deploy
+#    ไม่งั้น deploy เขียน .env ไม่ได้ + CI scp วางไฟล์ไม่ได้:
+#    sudo chown -R deploy:deploy /srv/coffee
 
 # swap 2GB กัน OOM (แม้ build ไม่ทำบนเครื่อง แต่ช่วยตอน load พีค)
 fallocate -l 2G /swapfile && chmod 600 /swapfile

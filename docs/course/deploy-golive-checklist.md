@@ -75,6 +75,7 @@ ssh -i ~/.ssh/coffee_deploy deploy@66.42.54.32
 1. **วาง `/srv/coffee/.env` บน VPS** (ทำมือครั้งเดียว — CI ไม่แตะไฟล์นี้):
    ```sh
    # ssh deploy@66.42.54.32 แล้ว:
+   sudo chown -R deploy:deploy /srv/coffee   # ครั้งเดียว — V0 สร้าง dir เป็น root, deploy ต้องเป็นเจ้าของ (เขียน .env + CI scp)
    cat > /srv/coffee/.env <<'EOF'
    DATABASE_URL=<Supabase pooled 6543 ?pgbouncer=true>
    JWT_SECRET=<openssl rand -base64 32>
