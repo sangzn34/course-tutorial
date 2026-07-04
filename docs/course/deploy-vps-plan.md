@@ -176,7 +176,12 @@
    ssh-copy-id -i ~/.ssh/coffee_deploy.pub deploy@<VPS_IP>
    # หรือ paste เนื้อ .pub ต่อท้าย /home/deploy/.ssh/authorized_keys
    ```
-3. **private → GitHub Secret `VPS_SSH_KEY`**: repo → Settings → Secrets and variables → Actions → New secret. paste ทั้งไฟล์ private รวมบรรทัด `-----BEGIN/END-----`
+3. **private → GitHub Secret `VPS_SSH_KEY`**: repo → Settings → Secrets and variables → Actions → New secret
+   ```sh
+   pbcopy < ~/.ssh/coffee_deploy   # copy ทั้งไฟล์ private เข้า clipboard (หรือ cat ~/.ssh/coffee_deploy แล้ว copy เอง)
+   ```
+   Name = `VPS_SSH_KEY`, Value = paste ทั้งไฟล์ **รวมบรรทัด `-----BEGIN/END OPENSSH PRIVATE KEY-----`**
+   ⚠️ ใช้ไฟล์ **ไม่มี `.pub`** (private) — `.pub` คือ public ไปวางบน VPS ไม่ใช่ Secret
 
 | ไฟล์ | อยู่ที่ | บทบาท |
 |---|---|---|
