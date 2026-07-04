@@ -1,12 +1,12 @@
 # V3 — CI/CD: push main → build → migrate → deploy VPS (ไม่ ssh มือ ไม่ build บน VPS)
 #
 # repo → Settings → Secrets and variables → Actions
-# Secrets (มีความลับ — เปิดดูค่าไม่ได้):
-#   DATABASE_URL   — Supabase pooled (6543)  ── มีรหัส DB → ต้อง Secret
-#   DIRECT_URL     — Supabase direct (5432)  ── มีรหัส DB → ต้อง Secret
-#   VPS_SSH_KEY    — private key ของ user deploy (ตรงกับ pubkey ใน authorized_keys)
-# Variables (ไม่ลับ — เปิดดูได้):
-#   VPS_HOST       — 66.42.54.32 (แค่ IP)
+# Secrets (เปิดดูค่าไม่ได้):
+#   VPS_SSH_KEY    — private key ของ user deploy — private key ห้ามเป็น Variable เด็ดขาด
+# Variables (เปิดดูได้ — teaching: เห็นค่าจริงเพื่อสอน):
+#   VPS_HOST       — 66.42.54.32 (แค่ IP ไม่ลับ)
+#   DATABASE_URL   — Supabase pooled (6543)  ── ⚠️ มีรหัส DB! เป็น Variable เพราะสอน (DB เรียนทิ้งได้)
+#   DIRECT_URL     — Supabase direct (5432)  ──    prod จริง = ย้ายเป็น Secret + rotate รหัส
 #
 # ต้องทำครั้งเดียวก่อน: §A (user deploy + key บน VPS) · วาง infra/* + .env ที่ /srv/coffee
 # GHCR package: ตั้งเป็น public (Packages → package → settings → public) ไม่งั้น VPS pull ไม่ได้
@@ -58,8 +58,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:deploy:ci # prisma migrate deploy (ไม่ใช่ dev — partialIndexes preview)
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }} # prisma.config ใช้ DIRECT_URL ?? DATABASE_URL
+          # ⚠️ teaching shortcut: ใช้ vars (อ่านค่าได้) เพื่อสอนให้เห็น connection string จริง
+          # ปกติ = secrets (มีรหัส DB) — ก่อนใช้ prod จริง/มีข้อมูลจริง ย้ายเป็น secrets + rotate รหัส
+          DATABASE_URL: ${{ vars.DATABASE_URL }}
+          DIRECT_URL: ${{ vars.DIRECT_URL }} # prisma.config ใช้ DIRECT_URL ?? DATABASE_URL
 
   deploy:
     needs: [build, migrate] # migrate เสร็จก่อนสลับ app เสมอ (schema ใหม่รอโค้ดใหม่)
