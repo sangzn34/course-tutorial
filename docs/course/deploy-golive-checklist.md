@@ -46,14 +46,16 @@ ssh -i ~/.ssh/coffee_deploy deploy@66.42.54.32
    ```sh
    git push origin main       # ⚠️ trigger pipeline ทันที — ตั้ง Secrets (ข้อ 2) ให้ครบก่อน
    ```
-2. **Secrets** — repo → Settings → Secrets and variables → Actions → แท็บ **Secrets** (❌ **ไม่ใช่ Variables**) → New repository secret (4 ตัว):
-   > ⚠️ ต้องเป็น **Secrets** ไม่ใช่ **Variables** — workflow อ่าน `secrets.*`; และ Variables เป็น plaintext (private key/รหัส DB จะโผล่). ใส่ผิดแท็บ = pipeline หาไม่เจอ + ความลับหลุด
-   | Name | Value | มาจาก |
-   |---|---|---|
-   | `DATABASE_URL` | Supabase pooled 6543 | A.2 |
-   | `DIRECT_URL` | Supabase direct 5432 | A.2 |
-   | `VPS_HOST` | `66.42.54.32` | — |
-   | `VPS_SSH_KEY` | เนื้อ private key ทั้งไฟล์ | `pbcopy < ~/.ssh/coffee_deploy` |
+2. **Secrets and variables → Actions** — ใส่ให้ตรง **แท็บ**ที่ workflow อ่าน (Secret อ่านค่ากลับไม่ได้, Variable อ่านได้):
+   | Name | แท็บ | Value | มาจาก |
+   |---|---|---|---|
+   | `VPS_SSH_KEY` | **Secret** | เนื้อ private key ทั้งไฟล์ | `pbcopy < ~/.ssh/coffee_deploy` |
+   | `VPS_HOST` | **Variable** | `66.42.54.32` | — |
+   | `DATABASE_URL` | **Variable** ⚠️ | Supabase pooled 6543 | A.2 |
+   | `DIRECT_URL` | **Variable** ⚠️ | Supabase direct 5432 | A.2 |
+   > **teaching shortcut:** `DATABASE_URL`/`DIRECT_URL` เป็น **Variable** เพื่อสอน (อ่านค่าเห็น connection string จริง) — แต่มันมีรหัส DB!
+   > ยอมได้เพราะ DB เรียนทิ้งได้. **prod จริง/มีข้อมูลจริง = ย้ายเป็น Secret + rotate รหัส** (แล้วแก้ workflow `vars.*` → `secrets.*`)
+   > **`VPS_SSH_KEY` เป็น Secret เสมอ** — private key ห้ามเป็น Variable เด็ดขาด. ใส่ผิดแท็บ = workflow หาไม่เจอ (อ่าน `secrets.VPS_SSH_KEY` + `vars.DATABASE_URL` ฯลฯ)
 3. **GHCR package → public** (ไม่งั้น VPS pull image ไม่ได้): หลัง build job รันครั้งแรก → GitHub profile/org → **Packages** → `course-tutorial` → Package settings → **Change visibility → Public**
    - หรือถ้าอยากเก็บ private: VPS ต้อง `docker login ghcr.io` ด้วย PAT (read:packages) — ยุ่งกว่า, แนะนำ public สำหรับโปรเจกต์เรียน
 
