@@ -29,7 +29,8 @@ docker run --rm --env-file .env -p 3000:3000 coffee
 
 **2b. ชี้ postgres local บน Mac** (ถ้ายังไม่มี Supabase — เทสเร็ว):
 ```sh
-pnpm db:up      # ให้ postgres local รันอยู่ (บน Mac)
+pnpm db:up          # postgres local รันอยู่ (บน Mac)
+pnpm db:migrate     # ⚠️ apply migrations → สร้าง table (DB ใหม่/ว่าง = ต้องรันก่อน ไม่งั้น P2021 table ไม่มี)
 
 # .env ของ dev ชี้ localhost:5433 — ใช้ตรง ๆ ใน container ไม่ได้ (localhost = ตัว container เอง)
 # override เป็น host.docker.internal (Docker Desktop Mac/Win ชี้กลับ host) + storage local
@@ -39,6 +40,7 @@ docker run --rm --env-file .env \
   -p 3000:3000 coffee
 ```
 > `-e` วางหลัง `--env-file` = override เฉพาะ 2 ตัวนั้น, ไม่แตะ `.env` (dev ยังใช้ localhost ได้)
+> **ไม่มี seed** (ยังไม่มี `prisma/seed.ts`) → register ได้ role `USER`; เทสอัปรูป/create product ต้อง `ADMIN` → `pnpm db:studio` แก้ role เป็น ADMIN
 
 คาดหวัง log: `▲ Next.js 16.x` + `✓ Ready in ...` ฟังที่ `0.0.0.0:3000`
 
