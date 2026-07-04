@@ -7,6 +7,12 @@ type SessionPayload = {
   role: string;
 };
 
+function getSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET is not set");
+  return new TextEncoder().encode(secret);
+}
+
 export async function signSessionToken(
   payload: SessionPayload,
 ): Promise<string> {
@@ -18,7 +24,7 @@ export async function signSessionToken(
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("2h")
-    .sign(new TextEncoder().encode(process.env.JWT_SECRET || "default_secret"));
+    .sign(getSecret());
 }
 
 export async function setSessionCookie(payload: SessionPayload) {
@@ -40,10 +46,7 @@ export async function verifySessionToken(
   token: string,
 ): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(
-      token,
-      new TextEncoder().encode(process.env.JWT_SECRET || "default_secret"),
-    );
+    const { payload } = await jwtVerify(token, getSecret());
 
     return {
       userId: payload.sub as string,

@@ -1,6 +1,10 @@
+import { requireRole } from "@/lib/auth/session";
 import { saveImage } from "@/lib/storage";
 
 export async function POST(request: Request) {
+  const auth = await requireRole("ADMIN");
+  if (auth instanceof Response) return auth;
+
   const form = await request.formData().catch(() => null);
   const file = form?.get("file");
   if (!(file instanceof File)) {

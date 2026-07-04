@@ -18,24 +18,9 @@ export async function POST(request: Request) {
 
   const { email, password } = result.data;
 
-  console.log("Received login data:", { email, password });
+  const user = await prisma.user.findUnique({ where: { email } });
 
-  // const user = await prisma.user.findUnique({
-  //   where: { email: email, passwordHash: password },
-  // });
-  const user = await prisma.user.findUnique({ where: { email: email } });
-
-  console.log("user", user);
-
-  // เช็คว่าพบ user หรือไม่ และตรวจสอบรหัสผ่าน
-  // if (!user || !(await verifyPassword(password, user.passwordHash))) {
-  //   return Response.json(
-  //     { message: "Invalid email or password" },
-  //     { status: 401 },
-  //   );
-  // }
-
-  if (!user) {
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
     return Response.json(
       { message: "Invalid email or password" },
       { status: 401 },

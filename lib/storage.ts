@@ -7,7 +7,6 @@ const ALLOWED = [
   "image/png",
   "image/webp",
   "application/pdf",
-  "application/octet-stream",
 ];
 const MAX_BYTES = 5 * 1024 * 1024; // 5MB
 
