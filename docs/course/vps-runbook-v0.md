@@ -107,6 +107,37 @@ systemctl restart ssh
 - คำสั่ง `docker` รันโดย `deploy` (อยู่ group docker แล้ว)
 - บีบสิทธิ์ key เพิ่มด้วย `command="…"` ใน authorized_keys ได้ (ดู V3)
 
+### §C. เพิ่ม / ย้าย / ถอด เครื่อง dev (จัดการ key ระยะยาว)
+
+**กฎเดียว:** 1 เครื่อง = 1 key = 1 บรรทัดใน `authorized_keys` บน VPS
+- `authorized_keys` = รายชื่อ **public** key ที่ประตูยอมรับ (แต่ละบรรทัด = 1 เครื่อง)
+- เพิ่มเครื่อง = เพิ่มบรรทัด · ถอดเครื่อง = ลบบรรทัด · **ไม่ต้องแตะเครื่องอื่น**
+- ตั้งชื่อ key ต่อเครื่องด้วย `-C` (เช่น `dev-laptop-2026`) → comment ท้ายบรรทัดบอกว่าอันไหนของเครื่องไหน ลบถูกตัว
+
+**เพิ่มเครื่องใหม่** (ทำตอน password ยังเปิด = ง่ายสุด, ใช้ `ssh-copy-id`):
+```sh
+# บนเครื่องใหม่ — สร้าง key ของเครื่องนี้
+ssh-keygen -t ed25519 -C "dev-laptop-2026" -f ~/.ssh/vps_key -N ""
+ssh-copy-id -i ~/.ssh/vps_key.pub deploy@66.42.54.32   # append เข้า authorized_keys (ไม่ทับของเก่า)
+ssh -i ~/.ssh/vps_key deploy@66.42.54.32               # เทส เข้าได้ = ผ่าน
+```
+> ถ้า password ปิดไปแล้ว (§B): `ssh-copy-id` ใช้ password ไม่ได้ →
+> ทำจาก **เครื่องเก่าที่มี key อยู่แล้ว** — `ssh` เข้าไปแล้ว `nano ~/.ssh/authorized_keys` วาง pubkey เครื่องใหม่ต่อท้าย
+
+**ย้ายเครื่อง (เลิกใช้เครื่องเก่า)** = เพิ่มเครื่องใหม่ (ข้างบน) แล้ว **ลบ key เครื่องเก่า**:
+```sh
+# บน VPS — ทำ "หลัง" เทสเครื่องใหม่เข้าได้แล้วเท่านั้น
+nano ~/.ssh/authorized_keys      # ลบบรรทัดที่ comment = เครื่องเก่า
+cat ~/.ssh/authorized_keys       # ยืนยันเหลือแค่บรรทัดที่ต้องการ
+```
+
+| สถานการณ์ | เครื่องใหม่ | เครื่องเก่า |
+|---|---|---|
+| **เพิ่มเครื่อง** (ใช้ทั้งคู่) | gen key + `ssh-copy-id` | เก็บ key ไว้ |
+| **ย้ายเครื่อง** (เลิกเก่า) | gen key + `ssh-copy-id` | **ลบบรรทัดใน authorized_keys** |
+
+> ⚠️ อย่าใช้ CI key (`coffee_deploy`) เป็น personal key บน laptop — คนละดอก: `coffee_deploy` อยู่ GitHub Secret เท่านั้น, personal key (`vps_key`) อยู่ laptop คุณ
+
 ---
 
 ## ⚠️ ระหว่างยังไม่ทำ §B
