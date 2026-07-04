@@ -82,6 +82,14 @@ ssh -i ~/.ssh/coffee_deploy deploy@66.42.54.32
 3. **trigger pipeline**: push main (ข้อ C.1) หรือ Actions → Deploy VPS → **Run workflow**
 4. ดู pipeline: repo → **Actions** → job `build → migrate → deploy` เขียวครบ
 
+> **เช็ค Secret ถูกไหม? เปิดดูค่าไม่ได้ (Secrets อ่านกลับไม่ได้) — ดูจาก job ที่แดงแทน:**
+> | job แดง + error | Secret ที่ผิด |
+> |---|---|
+> | `migrate`: auth failed / `P1001` | `DATABASE_URL` / `DIRECT_URL` |
+> | `deploy`: `Permission denied (publickey)` | `VPS_SSH_KEY` (หรือ pubkey ยังไม่อยู่บน VPS §B) |
+> | `deploy`: ต่อ host ไม่ได้ / timeout | `VPS_HOST` |
+> ไม่ชัวร์ = **Update secret (paste ทับ)** ปลอดภัยเสมอ · ต้นฉบับอยู่ที่ `cat ~/.ssh/coffee_deploy` / `.env.supabase`
+
 ## F. Verify live
 
 ```sh
