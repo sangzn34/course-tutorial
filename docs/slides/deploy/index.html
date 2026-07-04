@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0c0d12; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+<!-- ░░ SLIDE 1 — TITLE ░░ -->
+<section data-label="Title" data-screen-label="01" data-speaker-notes="เด็คที่ 3: จากแอปที่รันบนเครื่อง เอาขึ้น production จริง สอน 2 ทาง Vercel (เร็ว ซ่อนทุกอย่างให้) กับ VPS (ทำเองทุกขั้น เห็นสิ่งที่ Vercel ซ่อน) DB อยู่ Supabase ทั้งสองทาง">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:96px 100px;display:flex;flex-direction:column;justify-content:center;background:radial-gradient(120% 120% at 100% 0%, #1b1d2b 0%, #15161e 42%, #111219 100%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:34px;">
+      <span style="width:13px;height:13px;border-radius:50%;background:#73daca;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:25px;color:#787c99;letter-spacing:3px;text-transform:uppercase;">Food-Ordering App · Dev Workshop</span>
+    </div>
+    <h1 style="font-size:92px;line-height:1.04;font-weight:700;color:#f0f2ff;margin:0;letter-spacing:-1.5px;max-width:1500px;">Deploy: <span style="color:#73daca;">Vercel</span> + <span style="color:#7aa2f7;">VPS</span></h1>
+    <p style="font-family:'IBM Plex Mono',monospace;font-size:38px;color:#9aa3c4;margin:28px 0 0;letter-spacing:-0.5px;">จากเครื่องเรา → ขึ้นเน็ตจริง 2 ทาง</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:56px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">Supabase (DB + Storage)</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">Vercel</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">Docker + Caddy</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;border:1px solid #2a2f45;border-radius:999px;padding:10px 22px;">CI/CD + SSH</span>
+    </div>
+    <p style="font-size:27px;color:#6c7290;margin:64px 0 0;">สำหรับมือใหม่ React / Next.js · เนื้อหาภาษาไทย · keyword อังกฤษ</p>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 2 — สองทางเลือก ░░ -->
+<section data-label="สองทาง" data-screen-label="02" data-speaker-notes="ทำไมสอนสองแบบ: Vercel ได้ URL ใน session เดียว เห็นผลเร็ว แต่มันซ่อนกลไกไว้หมด VPS คือเปิดฝากล่อง ทุก step ของ VPS คือสิ่งที่ Vercel ทำให้ฟรี งานจริงเริ่ม Vercel เสมอ ย้าย VPS เมื่อชนลิมิต">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">02</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Why Two Paths</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">สอน 2 แบบ — <span style="color:#73daca;">Vercel</span> เร็ว, <span style="color:#7aa2f7;">VPS</span> เห็นทุกกลไก</h2>
+
+    <div style="display:flex;gap:34px;flex:1;min-height:0;margin-top:40px;">
+      <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:16px;padding:38px 36px;display:flex;flex-direction:column;gap:20px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#73daca;letter-spacing:2px;">VERCEL</span>
+        <div style="font-size:38px;font-weight:700;color:#e6eaff;">ซ่อนทุกอย่างให้</div>
+        <div style="font-size:28px;line-height:1.5;color:#c5cce6;">push → build → deploy อัตโนมัติ · HTTPS ฟรี · scale เอง</div>
+        <div style="margin-top:auto;font-size:26px;color:#9aa3c4;line-height:1.4;">ได้ URL ใน session เดียว<br>แต่ไม่เห็นว่ามันทำอะไร</div>
+      </div>
+      <div style="flex:1;background:#191a2b;border:1px solid #33395a;border-radius:16px;padding:38px 36px;display:flex;flex-direction:column;gap:20px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#7aa2f7;letter-spacing:2px;">VPS</span>
+        <div style="font-size:38px;font-weight:700;color:#e6eaff;">เปิดฝากล่อง ทำเอง</div>
+        <div style="font-size:28px;line-height:1.5;color:#c5cce6;">Docker · reverse proxy + TLS · CI/CD · restart · log</div>
+        <div style="margin-top:auto;font-size:26px;color:#9aa3c4;line-height:1.4;">ทุก step คือสิ่งที่<br>Vercel ทำให้ฟรี</div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">งานจริง: <b style="color:#73daca;font-weight:600;">เริ่ม Vercel เสมอ</b> — ย้าย VPS เมื่อชนลิมิต (cron, disk, long-running, ราคา)</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 3 — เทียบตาราง ░░ -->
+<section data-label="เทียบ" data-screen-label="03" data-speaker-notes="ตารางตัดสินใจ จุดสำคัญ: Vercel disk เขียนไม่ได้ (ephemeral) เลยต้องมี Supabase Storage ตั้งแต่แรก ส่วน VPS disk เขียนได้ แต่เราคงใช้ Supabase ต่อเพื่อ config ชุดเดียวทั้งสอง">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">03</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Trade-offs</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0 0 34px;letter-spacing:-0.5px;">เลือกยังไง — เทียบทีละแกน</h2>
+
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;font-size:28px;">
+      <div style="display:flex;padding:0 20px 16px;font-family:'IBM Plex Mono',monospace;font-size:23px;color:#787c99;letter-spacing:1px;text-transform:uppercase;">
+        <div style="flex:1.1;"></div><div style="flex:1;color:#73daca;">Vercel</div><div style="flex:1;color:#7aa2f7;">VPS</div>
+      </div>
+      <div style="display:flex;padding:22px 20px;border-top:1px solid #2a2f45;"><div style="flex:1.1;color:#9aa3c4;">ขึ้น prod ครั้งแรก</div><div style="flex:1;color:#c5cce6;">นาที</div><div style="flex:1;color:#c5cce6;">เป็นชั่วโมง</div></div>
+      <div style="display:flex;padding:22px 20px;border-top:1px solid #2a2f45;"><div style="flex:1.1;color:#9aa3c4;">HTTPS / TLS</div><div style="flex:1;color:#c5cce6;">อัตโนมัติ</div><div style="flex:1;color:#c5cce6;">Caddy ทำให้ (auto)</div></div>
+      <div style="display:flex;padding:22px 20px;border-top:1px solid #2a2f45;background:#1a1b26;border-radius:10px;"><div style="flex:1.1;color:#e6eaff;font-weight:600;">Disk เขียนไฟล์</div><div style="flex:1;color:#d98aa8;">ไม่ได้ (ephemeral)</div><div style="flex:1;color:#73daca;">ได้ (persistent)</div></div>
+      <div style="display:flex;padding:22px 20px;border-top:1px solid #2a2f45;"><div style="flex:1.1;color:#9aa3c4;">Cron / process ค้างยาว</div><div style="flex:1;color:#c5cce6;">จำกัด</div><div style="flex:1;color:#c5cce6;">ได้เต็มที่</div></div>
+      <div style="display:flex;padding:22px 20px;border-top:1px solid #2a2f45;"><div style="flex:1.1;color:#9aa3c4;">ราคา</div><div style="flex:1;color:#c5cce6;">ฟรี → กระโดด</div><div style="flex:1;color:#c5cce6;">คงที่ ~$4–6/เดือน</div></div>
+      <div style="display:flex;padding:22px 20px;border-top:1px solid #2a2f45;"><div style="flex:1.1;color:#9aa3c4;">เมื่อพัง</div><div style="flex:1;color:#c5cce6;">เปิด dashboard</div><div style="flex:1;color:#c5cce6;">ssh เข้าไปดูเอง</div></div>
+    </div>
+
+    <div style="margin-top:22px;padding-top:20px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;"><b style="color:#d98aa8;font-weight:600;">Vercel เขียน disk ไม่ได้</b> คือเหตุผลที่ต้องมี Supabase Storage ก่อน deploy แรก</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 4 — VERCEL FLOW ░░ -->
+<section data-label="Vercel flow" data-screen-label="04" data-speaker-notes="Vercel คือ git push แล้วจบ มันดึงโค้ด build ให้ (ต้อง prisma generate ก่อน ใส่ postinstall แล้ว) ตั้ง env ใน dashboard ทุก PR ได้ preview URL ของตัวเอง">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">04</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Path A · Vercel</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;"><span style="color:#73daca;">git push</span> แล้วจบ — Vercel ทำที่เหลือ</h2>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-top:50px;">
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:24px 12px;text-align:center;"><div style="font-size:30px;color:#c5cce6;">git push</div><div style="font-size:22px;color:#787c99;margin-top:6px;font-family:'IBM Plex Mono',monospace;">main</div></div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:34px;">→</span>
+      <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:12px;padding:24px 12px;text-align:center;"><div style="font-size:30px;color:#73daca;font-weight:600;">build</div><div style="font-size:22px;color:#8fb3a8;margin-top:6px;font-family:'IBM Plex Mono',monospace;">prisma generate</div></div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:34px;">→</span>
+      <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:12px;padding:24px 12px;text-align:center;"><div style="font-size:30px;color:#73daca;font-weight:600;">deploy</div><div style="font-size:22px;color:#8fb3a8;margin-top:6px;font-family:'IBM Plex Mono',monospace;">*.vercel.app</div></div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:34px;">→</span>
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:24px 12px;text-align:center;"><div style="font-size:30px;color:#c5cce6;">HTTPS</div><div style="font-size:22px;color:#787c99;margin-top:6px;font-family:'IBM Plex Mono',monospace;">อัตโนมัติ</div></div>
+    </div>
+
+    <div style="display:flex;gap:34px;flex:1;min-height:0;margin-top:44px;">
+      <div style="flex:1;display:flex;flex-direction:column;gap:22px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><b style="color:#e6eaff;">Import repo</b> → Vercel เดา framework = Next.js เอง</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">ตั้ง <b style="color:#e6eaff;">Environment Variables</b> ใน dashboard (จาก <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">.env.example</code>)</span></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:22px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">ทุก PR ได้ <b style="color:#e6eaff;">preview URL</b> ของตัวเอง — เทสก่อน merge</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><b style="color:#d98aa8;">migrate</b> ทำแยกผ่าน CI — <b style="color:#e6eaff;">อย่า</b> <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">migrate dev</code> บน prod</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">Vercel ซ่อน build + TLS + deploy ไว้หลัง <b style="color:#73daca;font-weight:600;">git push</b> — เด็คที่เหลือคือแกะให้ดูว่ามันทำอะไร</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 5 — VPS ROADMAP ░░ -->
+<section data-label="VPS roadmap" data-screen-label="05" data-speaker-notes="VPS ทำ 5 ขั้น V0 เตรียมเครื่อง+hardening ก่อนแอปเสมอ V1 dockerize V2 compose+Caddy ได้ https V3 CI/CD push แล้วอัพเดตเอง V4 ops health+monitor+เทส reboot แต่ละขั้น = 1 commit">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:radial-gradient(120% 120% at 0% 0%, #1a1c2b 0%, #15161e 45%, #111219 100%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#7aa2f7;font-weight:600;">05</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Path B · VPS Roadmap</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0 0 40px;letter-spacing:-0.5px;">VPS = 5 ขั้น, แต่ละขั้น <span style="color:#7aa2f7;">1 commit</span></h2>
+
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:18px;">
+      <div style="display:flex;gap:22px;align-items:center;background:#191a2b;border:1px solid #33395a;border-radius:14px;padding:22px 30px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:32px;color:#7aa2f7;font-weight:600;min-width:56px;">V0</span><div><div style="font-size:30px;color:#e6eaff;font-weight:600;">เตรียมเครื่อง + hardening</div><div style="font-size:25px;color:#9aa3c4;">SSH key only · ufw 22/80/443 · docker — ก่อนแอปเสมอ</div></div></div>
+      <div style="display:flex;gap:22px;align-items:center;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;padding:22px 30px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:32px;color:#73daca;font-weight:600;min-width:56px;">V1</span><div><div style="font-size:30px;color:#e6eaff;font-weight:600;">Dockerize</div><div style="font-size:25px;color:#9aa3c4;">standalone output + multi-stage — image เล็ก, ไม่มี .env</div></div></div>
+      <div style="display:flex;gap:22px;align-items:center;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;padding:22px 30px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:32px;color:#73daca;font-weight:600;min-width:56px;">V2</span><div><div style="font-size:30px;color:#e6eaff;font-weight:600;">Compose + Caddy</div><div style="font-size:25px;color:#9aa3c4;">reverse proxy + HTTPS อัตโนมัติ (3 บรรทัด)</div></div></div>
+      <div style="display:flex;gap:22px;align-items:center;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;padding:22px 30px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:32px;color:#73daca;font-weight:600;min-width:56px;">V3</span><div><div style="font-size:30px;color:#e6eaff;font-weight:600;">CI/CD</div><div style="font-size:25px;color:#9aa3c4;">push main → build → migrate → ssh deploy อัตโนมัติ</div></div></div>
+      <div style="display:flex;gap:22px;align-items:center;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;padding:22px 30px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:32px;color:#73daca;font-weight:600;min-width:56px;">V4</span><div><div style="font-size:30px;color:#e6eaff;font-weight:600;">Ops ขั้นต่ำ</div><div style="font-size:25px;color:#9aa3c4;">health endpoint · uptime monitor · เทส reboot จริง</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 6 — DOCKER ░░ -->
+<section data-label="Docker" data-screen-label="06" data-speaker-notes="multi-stage: deps ลง package, build รัน next build, runner เอาแค่ผลลัพธ์ standalone stage สุดท้ายไม่มี devDep ไม่มี source ไม่มี secret image เล็กจาก 1GB เหลือหลักร้อย MB สำคัญ .env ไม่เข้า image เด็ดขาด ฉีดตอน run">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:64px 92px 56px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">06</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">V1 · Dockerize</span>
+    </div>
+    <h2 style="font-size:50px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">Multi-stage — build ทิ้งไว้, เอาแค่ผลลัพธ์</h2>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-top:26px;">
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:16px 10px;text-align:center;font-size:25px;color:#c5cce6;">deps<div style="font-size:20px;color:#787c99;font-family:'IBM Plex Mono',monospace;">pnpm install</div></div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:28px;">→</span>
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:16px 10px;text-align:center;font-size:25px;color:#c5cce6;">build<div style="font-size:20px;color:#787c99;font-family:'IBM Plex Mono',monospace;">next build</div></div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:28px;">→</span>
+      <div style="flex:1.3;background:#16221d;border:1px solid #2f5045;border-radius:12px;padding:16px 10px;text-align:center;font-size:25px;color:#73daca;font-weight:600;">runner<div style="font-size:20px;color:#8fb3a8;font-family:'IBM Plex Mono',monospace;">standalone เท่านั้น · ~150MB</div></div>
+    </div>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:28px;">
+      <div style="flex:1.3;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">Dockerfile</span></div>
+        <pre style="margin:0;padding:24px 28px;font-family:'IBM Plex Mono',monospace;font-size:23px;line-height:1.5;white-space:pre;color:#c0caf5;overflow:hidden;">{{ codeDocker }}</pre>
+      </div>
+      <div style="flex:0 0 33%;display:flex;flex-direction:column;gap:22px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">output:"standalone"</code> ใน next.config</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">runner ไม่มี devDep / source / secret</span></div>
+        <div style="background:#211a22;border:1px solid #4a3050;border-radius:12px;padding:16px 20px;"><div style="font-size:26px;color:#d98aa8;font-weight:600;margin-bottom:4px;">.env ไม่เข้า image</div><div style="font-size:24px;color:#c5cce6;line-height:1.35;">image ขึ้น registry ใครดึงก็เห็น — ฉีด env ตอน <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">run</code></div></div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding-top:18px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">image เดียวรันเหมือนกันทุกที่ — <b style="color:#73daca;font-weight:600;">config มาจาก env ตอน run</b> ไม่ใช่ฝังใน image</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 7 — CADDY ░░ -->
+<section data-label="Caddy" data-screen-label="07" data-speaker-notes="reverse proxy = ตัวรับ 80/443 ส่งต่อเข้า app:3000 ที่เดียวที่จบ TLS ที่เดียวที่โลกเห็น Caddy ขอ cert Let's Encrypt เอง ต่ออายุเอง redirect http https เอง เทียบ nginx+certbot ทำเหมือนกันแต่ยาวกว่า 10 เท่า app ไม่เปิด port ออกนอก network">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:64px 92px 56px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">07</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">V2 · Reverse Proxy + HTTPS</span>
+    </div>
+    <h2 style="font-size:50px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">Caddy จบ TLS — HTTPS อัตโนมัติ 3 บรรทัด</h2>
+
+    <div style="display:flex;align-items:center;gap:16px;margin-top:44px;">
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:22px 12px;text-align:center;"><div style="font-size:28px;color:#c5cce6;">🌐 Internet</div><div style="font-size:22px;color:#787c99;font-family:'IBM Plex Mono',monospace;margin-top:4px;">:443 https</div></div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:32px;">→</span>
+      <div style="flex:1.1;background:#16221d;border:2px solid #2f5045;border-radius:12px;padding:22px 12px;text-align:center;"><div style="font-size:28px;color:#73daca;font-weight:600;">Caddy</div><div style="font-size:22px;color:#8fb3a8;font-family:'IBM Plex Mono',monospace;margin-top:4px;">TLS จบตรงนี้ · cert auto</div></div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:32px;">→</span>
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:22px 12px;text-align:center;"><div style="font-size:28px;color:#c5cce6;">app</div><div style="font-size:22px;color:#787c99;font-family:'IBM Plex Mono',monospace;margin-top:4px;">:3000 (ในเน็ตเวิร์ก)</div></div>
+    </div>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">Caddyfile</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:27px;line-height:1.6;white-space:pre;color:#c0caf5;overflow:hidden;">{{ codeCaddy }}</pre>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:20px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">ขอ cert + ต่ออายุ + redirect http→https <b style="color:#e6eaff;">อัตโนมัติ</b></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">cookie <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">secure:true</code> ทำงาน เพราะ TLS จบที่ Caddy</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">app ไม่เปิด port ออกนอก — โลกคุยกับ Caddy เท่านั้น</span></div>
+        <div style="font-size:25px;color:#787c99;line-height:1.4;padding-left:36px;">= สิ่งที่ Vercel เห็นทำให้ฟรี · แทน nginx+certbot (~30 บรรทัด)</div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding-top:18px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">reverse proxy = <b style="color:#73daca;font-weight:600;">ที่เดียวที่จบ TLS, ที่เดียวที่โลกเห็น</b> — ไม่ต้องแตะ cert เอง</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 8 — CI/CD ░░ -->
+<section data-label="CI/CD" data-screen-label="08" data-speaker-notes="pipeline 3 job build push image ไป GHCR tag ด้วย sha, migrate ก่อนสลับ app เสมอ, deploy ssh เข้า VPS pull+up สำคัญ build ใน CI ไม่ใช่บน VPS เพราะเครื่องเล็ก next build OOM ได้ rollback = deploy sha เก่า">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:64px 92px 56px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">08</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">V3 · CI/CD Pipeline</span>
+    </div>
+    <h2 style="font-size:50px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">push main → เว็บอัพเดตเอง (ไม่ ssh มือ)</h2>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-top:26px;">
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:12px;padding:16px 8px;text-align:center;font-size:24px;color:#c5cce6;">git push</div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:26px;">→</span>
+      <div style="flex:1.1;background:#16221d;border:1px solid #2f5045;border-radius:12px;padding:16px 8px;text-align:center;font-size:24px;color:#73daca;font-weight:600;">build<div style="font-size:19px;color:#8fb3a8;font-family:'IBM Plex Mono',monospace;">→ GHCR :sha</div></div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:26px;">→</span>
+      <div style="flex:1.1;background:#211d16;border:1px solid #5a4a28;border-radius:12px;padding:16px 8px;text-align:center;font-size:24px;color:#e0b15a;font-weight:600;">migrate<div style="font-size:19px;color:#a8905a;font-family:'IBM Plex Mono',monospace;">Supabase direct</div></div>
+      <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:26px;">→</span>
+      <div style="flex:1.1;background:#16221d;border:1px solid #2f5045;border-radius:12px;padding:16px 8px;text-align:center;font-size:24px;color:#73daca;font-weight:600;">deploy<div style="font-size:19px;color:#8fb3a8;font-family:'IBM Plex Mono',monospace;">ssh pull+up</div></div>
+    </div>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:28px;">
+      <div style="flex:1.25;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">.github/workflows/deploy-vps.yml</span></div>
+        <pre style="margin:0;padding:22px 28px;font-family:'IBM Plex Mono',monospace;font-size:22px;line-height:1.5;white-space:pre;color:#c0caf5;overflow:hidden;">{{ codeCi }}</pre>
+      </div>
+      <div style="flex:0 0 34%;display:flex;flex-direction:column;gap:20px;padding-top:6px;">
+        <div style="background:#211a22;border:1px solid #4a3050;border-radius:12px;padding:16px 20px;"><div style="font-size:26px;color:#d98aa8;font-weight:600;margin-bottom:4px;">migrate ก่อน deploy</div><div style="font-size:24px;color:#c5cce6;line-height:1.35;">โค้ดใหม่ + schema เก่า = พัง</div></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;"><b style="color:#e6eaff;">build ใน CI</b> ไม่ใช่บน VPS — เครื่องเล็ก build แล้ว OOM</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:26px;line-height:1.4;color:#c5cce6;">tag ด้วย <b style="color:#e6eaff;">sha</b> → rollback = deploy sha เก่า</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;padding-top:16px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">server มีหน้าที่ <b style="color:#73daca;font-weight:600;">รัน ไม่ใช่ build</b> — CI build เสร็จ, VPS แค่ pull image</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 9 — SSH KEY ANALOGY ░░ -->
+<section data-label="SSH: กุญแจ" data-screen-label="09" data-speaker-notes="หัวใจที่คนงงบ่อย SSH key มาเป็นคู่ private = ลูกกุญแจ ต้องเก็บลับ ใช้ไข public = แม่กุญแจ ติดที่ประตู แจกได้ไม่ลับ ผูกกันทางคณิตศาสตร์ แม่กุญแจนี้ไขได้ด้วยลูกกุญแจคู่นี้ตัวเดียว">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:radial-gradient(120% 120% at 100% 100%, #1c1b2b 0%, #15161e 45%, #111219 100%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#7aa2f7;font-weight:600;">09</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">SSH Key · Mental Model</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">SSH key มาเป็น <span style="color:#73daca;">คู่</span> — ลูกกุญแจ + แม่กุญแจ</h2>
+
+    <div style="display:flex;gap:34px;flex:1;min-height:0;margin-top:44px;">
+      <div style="flex:1;background:#211a22;border:1px solid #4a3050;border-radius:16px;padding:40px 38px;display:flex;flex-direction:column;gap:18px;">
+        <div style="font-size:64px;">🔑</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#d98aa8;letter-spacing:1px;">private key</div>
+        <div style="font-size:38px;font-weight:700;color:#e6eaff;">ลูกกุญแจ</div>
+        <div style="font-size:28px;line-height:1.5;color:#c5cce6;">ใช้ <b style="color:#e6eaff;">ไข</b> · เก็บลับสุด · <b style="color:#d98aa8;">ห้ามหลุด ห้ามเข้า repo</b></div>
+        <div style="margin-top:auto;font-size:25px;color:#9aa3c4;">อยู่ที่ <b style="color:#e6eaff;">คนไข</b> เท่านั้น (CI)</div>
+      </div>
+      <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:16px;padding:40px 38px;display:flex;flex-direction:column;gap:18px;">
+        <div style="font-size:64px;">🔒</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;color:#73daca;letter-spacing:1px;">public key (.pub)</div>
+        <div style="font-size:38px;font-weight:700;color:#e6eaff;">แม่กุญแจ</div>
+        <div style="font-size:28px;line-height:1.5;color:#c5cce6;">ติดที่ <b style="color:#e6eaff;">ประตู</b> · แจกได้ · <b style="color:#73daca;">หลุดไม่เป็นไร</b></div>
+        <div style="margin-top:auto;font-size:25px;color:#9aa3c4;">อยู่ที่ <b style="color:#e6eaff;">ประตู</b> (VPS)</div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">ผูกกันทางคณิตศาสตร์: <b style="color:#73daca;font-weight:600;">แม่กุญแจนี้ไขได้ด้วยลูกกุญแจคู่นี้ตัวเดียว</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 10 — SSH KEY 3 ที่ + FLOW ░░ -->
+<section data-label="SSH: 3 ที่" data-screen-label="10" data-speaker-notes="3 ที่ทำอะไร สร้าง key บนเครื่องเรา (จุดเดียวที่ private เกิด) public ไป VPS authorized_keys บอกประตูยอมรับใคร private ไป GitHub Secret ให้ CI มีลูกกุญแจไข ตอน deploy CI ถือ private เคาะประตู VPS เช็คตรงกับ public ไหม ตรง=เข้า private key ไม่เคยอยู่ 2 ที่พร้อมกัน">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:64px 92px 56px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#7aa2f7;font-weight:600;">10</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">SSH Key · 3 ที่ ทำอะไร</span>
+    </div>
+    <h2 style="font-size:50px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">1 คู่ → 3 ที่ แต่ละที่มีเหตุผล</h2>
+
+    <div style="display:flex;gap:22px;margin-top:30px;">
+      <div style="flex:1;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;padding:24px 26px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:22px;color:#787c99;margin-bottom:8px;">1 · เครื่องเรา</div><div style="font-size:27px;color:#e6eaff;font-weight:600;margin-bottom:8px;">สร้างคู่กุญแจ</div><div style="font-size:23px;color:#9aa3c4;line-height:1.4;font-family:'IBM Plex Mono',monospace;">ssh-keygen -t ed25519</div><div style="font-size:23px;color:#c5cce6;line-height:1.4;margin-top:10px;">จุดเดียวที่ private เกิด — คุมได้ว่าไปไหนต่อ</div></div>
+      <div style="flex:1;background:#16221d;border:1px solid #2f5045;border-radius:14px;padding:24px 26px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:22px;color:#73daca;margin-bottom:8px;">2 · VPS 🔒 public</div><div style="font-size:27px;color:#e6eaff;font-weight:600;margin-bottom:8px;">ยอมให้ใครเข้า</div><div style="font-size:23px;color:#9aa3c4;line-height:1.4;font-family:'IBM Plex Mono',monospace;">~/.ssh/authorized_keys</div><div style="font-size:23px;color:#c5cce6;line-height:1.4;margin-top:10px;">รายชื่อแม่กุญแจที่ประตูยอมรับ</div></div>
+      <div style="flex:1;background:#211a22;border:1px solid #4a3050;border-radius:14px;padding:24px 26px;"><div style="font-family:'IBM Plex Mono',monospace;font-size:22px;color:#d98aa8;margin-bottom:8px;">3 · GitHub 🔑 private</div><div style="font-size:27px;color:#e6eaff;font-weight:600;margin-bottom:8px;">CI ใช้ไข</div><div style="font-size:23px;color:#9aa3c4;line-height:1.4;font-family:'IBM Plex Mono',monospace;">Secret: VPS_SSH_KEY</div><div style="font-size:23px;color:#c5cce6;line-height:1.4;margin-top:10px;">encrypted · log ไม่โชว์ค่า</div></div>
+    </div>
+
+    <div style="background:#191a24;border:1px solid #2a2f45;border-radius:14px;padding:24px 30px;margin-top:26px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;color:#787c99;letter-spacing:1px;margin-bottom:16px;">ตอน DEPLOY จริง</div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <span style="background:#211a22;border:1px solid #4a3050;border-radius:10px;padding:12px 18px;font-size:24px;color:#d98aa8;">CI ถือ 🔑 private</span>
+        <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:26px;">— ssh เคาะ →</span>
+        <span style="background:#16221d;border:1px solid #2f5045;border-radius:10px;padding:12px 18px;font-size:24px;color:#73daca;">VPS เช็คกับ 🔒 public</span>
+        <span style="color:#73daca;font-family:'IBM Plex Mono',monospace;font-size:26px;">— ตรง →</span>
+        <span style="background:#1a1b26;border:1px solid #2a2f45;border-radius:10px;padding:12px 18px;font-size:24px;color:#c5cce6;">docker compose up</span>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:18px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;"><b style="color:#73daca;font-weight:600;">private key ไม่เคยอยู่ 2 ที่พร้อมกัน</b> — เกิดที่เครื่องเรา ย้ายเข้า Secret จบ; VPS มีแค่ public</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 11 — SSH HARDENING ░░ -->
+<section data-label="SSH: บีบสิทธิ์" data-screen-label="11" data-speaker-notes="best practice key: ใช้ key เฉพาะงาน CI ไม่ใช่ key ส่วนตัว, ไม่มี passphrase เพราะ CI พิมพ์ไม่ได้ ความปลอดภัยมาจากแยก key + จำกัดสิทธิ์ บีบด้วย command= ใน authorized_keys ให้ key นี้รันได้แค่ deploy หลุดก็ทำอย่างอื่นไม่ได้ revoke = ลบบรรทัดเดียว">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:64px 92px 56px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">11</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">SSH Key · Harden</span>
+    </div>
+    <h2 style="font-size:50px;line-height:1.1;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">key เฉพาะงาน + บีบให้ทำได้แค่ deploy</h2>
+
+    <div style="display:flex;gap:40px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:1.15;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">สร้าง + บีบสิทธิ์</span></div>
+        <pre style="margin:0;padding:24px 28px;font-family:'IBM Plex Mono',monospace;font-size:22px;line-height:1.55;white-space:pre-wrap;word-break:break-all;color:#c0caf5;overflow:hidden;">{{ codeKey }}</pre>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:20px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;"><b style="color:#e6eaff;">key เฉพาะงาน CI</b> — ไม่ใช่ key ส่วนตัวที่ ssh ทุกวัน</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">-N ""</code> ไม่มี passphrase — CI พิมพ์ไม่ได้</span></div>
+        <div style="background:#16221d;border:1px solid #2f5045;border-radius:12px;padding:16px 20px;"><div style="font-size:26px;color:#73daca;font-weight:600;margin-bottom:4px;">command="…" ใน authorized_keys</div><div style="font-size:24px;color:#c5cce6;line-height:1.35;">key หลุดก็ทำได้ <b style="color:#e6eaff;">แค่ deploy</b> — สั่ง shell/อ่านไฟล์ไม่ได้</div></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">revoke = <b style="color:#e6eaff;">ลบบรรทัดเดียว</b> ใน authorized_keys</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding-top:18px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">ไม่มี passphrase แต่ปลอดภัยเพราะ <b style="color:#73daca;font-weight:600;">แยก key + จำกัดสิทธิ์ + revoke ง่าย</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 12 — CHECKLIST / END ░░ -->
+<section data-label="Checklist" data-screen-label="12" data-speaker-notes="ปิดเด็ค checklist self-host เป็นแล้ว 6 ข้อ ทั้งหมดต้องเทสจริงไม่ใช่แค่เขียน โดยเฉพาะ reboot กับ monitor รวมหลักการ: server ไม่มี state (อยู่ Supabase หมด) พังก็สร้างใหม่ตาม runbook ได้">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:80px 100px;display:flex;flex-direction:column;justify-content:center;background:radial-gradient(120% 120% at 100% 0%, #1b1d2b 0%, #15161e 42%, #111219 100%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:26px;">
+      <span style="width:13px;height:13px;border-radius:50%;background:#73daca;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:3px;text-transform:uppercase;">Checklist · "self-host เป็นแล้ว"</span>
+    </div>
+    <h2 style="font-size:60px;line-height:1.1;font-weight:700;color:#f0f2ff;margin:0 0 40px;letter-spacing:-1px;">เทสจริงทุกข้อ ไม่ใช่แค่เขียน</h2>
+
+    <div style="display:flex;gap:40px;">
+      <div style="flex:1;display:flex;flex-direction:column;gap:18px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">✓</span><span style="font-size:29px;line-height:1.4;color:#c5cce6;">ssh ได้ด้วย <b style="color:#e6eaff;">key เท่านั้น</b>, ufw แค่ 22/80/443</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">✓</span><span style="font-size:29px;line-height:1.4;color:#c5cce6;">image runner <b style="color:#e6eaff;">ไม่มี .env / source</b></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">✓</span><span style="font-size:29px;line-height:1.4;color:#c5cce6;">https เขียว + cert ต่ออายุเอง</span></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:18px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">✓</span><span style="font-size:29px;line-height:1.4;color:#c5cce6;">push main → <b style="color:#e6eaff;">เว็บอัพเดตเอง</b></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">✓</span><span style="font-size:29px;line-height:1.4;color:#c5cce6;"><b style="color:#e6eaff;">reboot</b> → เว็บกลับมาเองใน ~1 นาที</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;">✓</span><span style="font-size:29px;line-height:1.4;color:#c5cce6;">monitor เตือนเมื่อดับ · <b style="color:#e6eaff;">rollback</b> sha เก่าได้</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:56px;padding-top:26px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:28px;">⭐</span>
+      <span style="font-size:29px;color:#cdd6f4;line-height:1.4;">state อยู่ Supabase หมด → <b style="color:#73daca;font-weight:600;">server ไม่มี state = พังก็สร้างใหม่ตาม runbook</b> (cattle ไม่ใช่ pet)</span>
+    </div>
+  </div>
+</section>
+
+</x-import>
+
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  hl(code) {
+    const R = React;
+    const C = {
+      com: '#5f6b85', str: '#9ece6a', kw: '#bb9af7',
+      fn: '#7aa2f7', type: '#7dcfff', num: '#ff9e64'
+    };
+    const re = /(#[^\n]*|\/\/[^\n]*)|(`[^`]*`|"[^"]*"|'[^']*')|\b(const|let|var|function|return|if|else|await|async|export|import|from|new|try|catch|throw|typeof|type|interface|class|extends|this|of|in|as|default|void|FROM|RUN|COPY|CMD|WORKDIR|EXPOSE|USER|AS|ENV)\b|\b(true|false|null|undefined|\d[\w_]*)\b|([A-Za-z_$][\w$]*)(?=\s*\()|\b([A-Z][\w$]*)\b/g;
+    const out = [];
+    let last = 0, m, k = 0;
+    while ((m = re.exec(code)) !== null) {
+      if (m.index > last) out.push(code.slice(last, m.index));
+      let color = null, italic = false;
+      if (m[1]) { color = C.com; italic = true; }
+      else if (m[2]) color = C.str;
+      else if (m[3]) color = C.kw;
+      else if (m[4]) color = C.num;
+      else if (m[5]) color = C.fn;
+      else if (m[6]) color = C.type;
+      const st = { color };
+      if (italic) st.fontStyle = 'italic';
+      out.push(R.createElement('span', { key: k++, style: st }, m[0]));
+      last = re.lastIndex;
+    }
+    if (last < code.length) out.push(code.slice(last));
+    return out;
+  }
+
+  renderVals() {
+    const codeDocker = `FROM node:22-alpine AS deps
+RUN corepack enable
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+FROM deps AS build
+COPY . .
+RUN pnpm build          # prisma generate + next build
+
+FROM node:22-alpine AS runner
+ENV NODE_ENV=production
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+USER node
+EXPOSE 3000
+CMD ["node", "server.js"]`;
+
+    const codeCaddy = `coffee.yourdomain.com {
+    reverse_proxy app:3000
+}`;
+
+    const codeCi = `jobs:
+  build:    # docker build → push ghcr.io/…:sha-<commit>
+  migrate:  # pnpm db:deploy:ci  (DIRECT_URL = Supabase)
+  deploy:
+    needs: [build, migrate]      # migrate ก่อนเสมอ
+    steps:
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: \${{ secrets.VPS_HOST }}
+          username: deploy
+          key: \${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /srv/coffee
+            docker compose pull
+            docker compose up -d`;
+
+    const codeKey = `# 1) สร้างคู่กุญแจ (เครื่องเรา)
+ssh-keygen -t ed25519 -C "ci-deploy" \\
+  -f ~/.ssh/coffee_deploy -N ""
+
+# 2) public → VPS
+ssh-copy-id -i ~/.ssh/coffee_deploy.pub deploy@IP
+
+# 3) private → GitHub Secret VPS_SSH_KEY
+
+# บีบสิทธิ์: ต่อหน้าบรรทัดใน authorized_keys
+command="cd /srv/coffee && docker compose \\
+pull && docker compose up -d",\\
+no-port-forwarding,no-pty ssh-ed25519 AAAA...`;
+
+    return {
+      codeDocker: this.hl(codeDocker),
+      codeCaddy: this.hl(codeCaddy),
+      codeCi: this.hl(codeCi),
+      codeKey: this.hl(codeKey),
+    };
+  }
+}
+</script>
+</body>
+</html>

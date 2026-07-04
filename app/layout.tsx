@@ -1,8 +1,14 @@
-"use client";
-
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/lib/client";
+import { Toaster } from "sonner";
+import { LocatorJS } from "@/components/LocatorJS";
+import { cn } from "@/lib/utils";
+import { Metadata } from "next";
+import { SiteHeader } from "@/components/SiteHeader";
+import { ThemeProvider } from "@/components/ThemeProvider";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,6 +20,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const metadata: Metadata = {
+  title: { default: "My Coffee", template: "%s - My Coffee" },
+  description: "ร้านกาแฟออนไลน์ - สั่งง่าย ส่งไว",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,11 +33,26 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={cn(
+        "h-full",
+        "antialiased",
+        geistSans.variable,
+        geistMono.variable,
+        "font-sans",
+        inter.variable,
+      )}
     >
-      <QueryProvider>
-        <body className="min-h-full flex flex-col">{children}</body>
-      </QueryProvider>
+      <body className="flex flex-col">
+        <ThemeProvider>
+          <QueryProvider>
+            <SiteHeader />
+            <main className="flex flex-1 flex-col">{children}</main>
+            <Toaster richColors position="top-right" />
+            <LocatorJS />
+          </QueryProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

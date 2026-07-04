@@ -1,18 +1,15 @@
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const items = await prisma.product.findMany({
-    orderBy: { id: "asc" },
+  const products = await prisma.product.findMany({
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       name: true,
-      nameTh: true,
-      category: true,
       price: true,
       description: true,
-      available: true,
+      imageUrl: true,
     },
   });
-
-  return Response.json(items);
+  return Response.json(products);
 }
