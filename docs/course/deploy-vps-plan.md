@@ -1,9 +1,13 @@
 # Phase H — Deploy ทางเลือกที่ 2: VPS self-host (แผนการสอน)
 
-**Branch:** `prep/deploy` (ต่อจาก Phase G)
-**Sessions:** ประมาณ 3 sessions (V0+V1 / V2 / V3+V4)
+**Branch:** `feat/deploy-vps` → merge `prep/deploy` (ต่อจาก Phase G)
+**Sessions:** ประมาณ 3–4 sessions (V0+V1 / V2 / V3+V4 / V5)
 **สถานะ:** แผน — ยังไม่ลงมือ. แต่ละ step = 1 commit
-**Prerequisite:** Phase G เสร็จ — แอปขึ้น Vercel + DB อยู่ Supabase + Step 0 hardening ปิดครบแล้ว
+**Prerequisite:** Step 0 hardening ปิดครบแล้ว (login verify, JWT fail-fast, upload gate, ตัด octet-stream)
+
+> **2 เฟส (ตัดสินใจแล้ว):**
+> **เฟส 1 (V0–V4)** — แอปขึ้น VPS ด้วย **Storage local disk** (VPS disk persistent) แต่ **DB ยังชี้ Supabase** → ตัวแปรน้อย เห็นเว็บขึ้นก่อน
+> **เฟส 2 (V5)** — ย้าย **DB เข้า VPS** (Postgres ใน compose) พร้อม backup discipline — แยกออกมาเพราะมาพร้อมภาระ ops ที่ไม่ควรปนตอน debug ครั้งแรก
 
 > เป้าหมายรวม: เอาแอปตัวเดียวกันมารันเองบน VPS ครบวงจร — Docker, reverse proxy + HTTPS, CI/CD —
 > ไม่ใช่เพื่อหนี Vercel แต่เพื่อให้เห็นว่า **ทุกอย่างที่ Vercel ซ่อนไว้** (build, TLS, restart, log, deploy) มีหน้าตายังไงเวลาต้องทำเอง
@@ -26,7 +30,7 @@
 
 ## หลักการที่ตัดสินใจล่วงหน้า (best practice + เหตุผล)
 
-1. **DB อยู่ Supabase ต่อ — VPS รันแค่แอป.** อย่ารัน Postgres เองถ้าไม่จำเป็น: backup, HA, patch คืองานที่ managed ทำให้ฟรี. self-host DB แยกเป็น Phase ต่างหากถ้าอยากสอน (ดูนอกสโคป)
+1. **เฟส 1: DB ยัง Supabase, Storage ย้ายมา local disk.** VPS disk persistent → ไฟล์รูปเก็บบนเครื่องได้ (`STORAGE_DRIVER=local` + volume) = ลบ dependency Supabase Storage ทิ้ง. DB ค้าง Supabase ไว้ก่อนเพื่อให้เว็บขึ้นด้วยตัวแปรน้อยสุด → เฟส 2 (V5) ค่อยย้าย DB เข้า VPS
 2. **Docker ไม่ใช่ PM2 + node บนเครื่อง.** image เดียวรันเหมือนกันทุกที่, rollback = เปลี่ยน tag, เครื่องพังก็ `docker compose up` เครื่องใหม่จบ
 3. **Caddy เป็น reverse proxy ไม่ใช่ nginx.** HTTPS + ต่ออายุ cert อัตโนมัติใน config 3 บรรทัด — nginx + certbot สอนแนวคิดเดียวกันแต่ยาวกว่า 10 เท่า (โชว์เทียบให้ดูเฉย ๆ)
 4. **Build ใน CI ไม่ใช่บน VPS.** VPS เล็ก (1–2GB RAM) รัน `next build` แล้ว OOM ได้ — server มีหน้าที่**รัน** ไม่ใช่ build. CI build → push image → server แค่ pull
@@ -82,12 +86,12 @@
    CMD ["node", "server.js"]
    ```
 3. `.dockerignore`: `node_modules`, `.next`, `.env*`, `docs`
-4. ทดสอบ local: `docker build -t coffee .` แล้ว `docker run --env-file .env.supabase -p 3000:3000 coffee`
+4. ทดสอบ local: `docker build -t coffee .` แล้ว `docker run --env-file .env -p 3000:3000 coffee`
 
 ### teaching points
 - **multi-stage ทำไม**: stage สุดท้ายไม่มี devDependencies, ไม่มี source, ไม่มี secret — image เล็กลงจาก ~1GB เหลือหลักร้อย MB
 - **`.env` ไม่เข้า image เด็ดขาด** — image ขึ้น registry, ใครดึงได้ก็เห็น; env ฉีดตอน run เท่านั้น
-- **VPS disk = persistent** — `STORAGE_DRIVER=local` ที่ใช้บน Vercel ไม่ได้ กลับมาใช้ได้บน VPS (mount volume)! แต่เราคงใช้ `supabase` ต่อเพื่อ config ชุดเดียวกันทั้งสอง platform — นี่คือตัวอย่างจริงของความต่าง serverless vs server
+- **VPS disk = persistent → Storage กลับมาใช้ local ได้** — `STORAGE_DRIVER=local` ที่พังบน Vercel (serverless fs) ใช้ได้บน VPS. ตั้ง `STORAGE_DRIVER=local` + mount volume ที่ `public/uploads` (ไฟล์ไม่หายตอน redeploy) → **ลบ dependency Supabase Storage ทิ้ง** (ตัด `SUPABASE_*` env, ไม่ต้องเรียก REST). นี่คือความต่าง serverless vs server ของจริง — บน server เขียน disk ได้ ไม่ต้องหา storage นอก
 
 ### gotcha
 - `next build` ต้องการ `DATABASE_URL` ตอน build ไหม? — ถ้ามีหน้า static ที่ query DB ตอน build จะพัง ต้องดูตอนลงมือ (หน้าเราเป็น client fetch หมด น่าจะรอด)
@@ -108,12 +112,14 @@
      app:
        image: ghcr.io/<user>/coffee:latest
        env_file: /srv/coffee/.env        # อยู่บนเครื่อง ไม่อยู่ใน repo
+       volumes: [uploads:/app/public/uploads]   # รูปเก็บบน disk — ไม่หายตอน redeploy
        restart: unless-stopped
      caddy:
        image: caddy:2
        ports: ["80:80", "443:443"]
        volumes: [./Caddyfile:/etc/caddy/Caddyfile, caddy_data:/data]
        restart: unless-stopped
+   volumes: { uploads: {}, caddy_data: {} }
    ```
 2. **Caddyfile** — ทั้งไฟล์มีเท่านี้:
    ```
@@ -122,7 +128,7 @@
    }
    ```
 3. **DNS**: A record `coffee.yourdomain.com` → IP ของ VPS (เทียบบทเรียน Phase G: Vercel ชี้ CNAME ไป infra เขา — VPS ชี้ IP เครื่องเราตรง ๆ)
-4. `.env` บนเครื่อง: `/srv/coffee/.env`, `chmod 600` — ค่าชุดเดียวกับที่ตั้งใน Vercel (จาก `.env.example`)
+4. `.env` บนเครื่อง: `/srv/coffee/.env`, `chmod 600`. เฟส 1: `DATABASE_URL`/`DIRECT_URL` = Supabase, `JWT_SECRET`, `STORAGE_DRIVER=local` (ตัด `SUPABASE_*` ออก)
 5. `docker compose up -d` → Caddy ขอ cert Let's Encrypt เองตอน request แรก
 
 ### teaching points
@@ -196,14 +202,48 @@ key หลุดก็ทำได้แค่ deploy — สั่ง shell/อ
 2. **Uptime monitor ฟรี** (UptimeRobot) ยิง `/api/health` ทุก 5 นาที → แจ้งเตือนเข้า email/LINE
 3. **ทดสอบ restart จริง**: `sudo reboot` แล้วดูเว็บกลับมาเอง (`restart: unless-stopped` + docker service enabled) — ไม่เทส = ไม่รู้จนกว่าจะพังตอนตีสาม
 4. **ดู log เป็น**: `docker compose logs -f app`, `journalctl -u docker` — สอน 10 นาทีตอนของจริงพังจะขอบคุณตัวเอง
-5. **Backup**: state อยู่ Supabase หมด (DB + รูป) — VPS เป็น cattle ไม่ใช่ pet, พังก็สร้างใหม่ตาม runbook V0–V2 ได้ใน 1 ชม.
+5. **Backup (เฟส 1)**: DB ยังอยู่ Supabase (มัน backup ให้). state เดียวบน VPS = **volume `uploads`** (รูปสินค้า) → `tar` volume ออกไปเก็บที่อื่นเป็นระยะ. โค้ด/config สร้างใหม่จาก runbook ได้หมด → VPS ใกล้เป็น cattle (จนกว่าจะย้าย DB เข้าเฟส 2 แล้ว backup จะจริงจังขึ้น — ดู V5)
 
 ### teaching points
 - monitor จากข้างนอก (UptimeRobot) ไม่ใช่ข้างใน — เครื่องดับ monitor บนเครื่องก็ดับด้วย
-- ออกแบบให้ server **ไม่มี state** = backup ง่ายที่สุดคือไม่ต้อง backup
+- state เหลือน้อย = backup ง่าย. เฟส 1 มี state แค่ volume รูป (DB ให้ Supabase ดูแล) — ยิ่งน้อย ยิ่งกู้เร็ว
 - health check ที่ query DB จับได้ทั้ง "app ตาย" และ "DB หลุด" — คืน 200 เปล่า ๆ จับได้แค่อย่างแรก
 
 **commit:** `feat(ops): health endpoint + ops runbook`
+
+---
+
+## Step V5 — เฟส 2: ย้าย DB เข้า VPS (Postgres self-host + backup)
+
+> ทำ**หลัง**เฟส 1 นิ่งแล้ว (เว็บขึ้น, reboot รอด, monitor เตือนได้). แยกออกมาเพราะมาพร้อม **backup discipline** — ถ้าไม่พร้อมดูแล backup เอง **อย่าทำ** ปล่อย DB ไว้ที่ Supabase ก็จบงานได้
+
+### เป้าหมาย
+Postgres รันใน compose บน VPS เดียวกัน, ตัด Supabase ทิ้งทั้งหมด (DB + ที่เหลือ), มี backup ที่**เทส restore แล้ว**
+
+### ขั้นตอน
+1. **เพิ่ม postgres service** ใน `docker-compose.prod.yml`:
+   ```yaml
+   db:
+     image: postgres:17-alpine
+     environment: [POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_USER]
+     volumes: [pgdata:/var/lib/postgresql/data]
+     restart: unless-stopped
+     # ไม่ ports: — DB คุยแค่ในเน็ตเวิร์ก compose, ไม่โผล่ออกเน็ต
+   ```
+   `DATABASE_URL` ของแอปชี้ `db:5432` (ชื่อ service), `DIRECT_URL` = ตัวเดียวกัน (ไม่มี pooler บน self-host)
+2. **ย้ายข้อมูลจาก Supabase**: `pg_dump` จาก Supabase → `psql`/`pg_restore` เข้า postgres ตัวใหม่ (ทำครั้งเดียว ตอน cutover)
+3. **`migrate deploy`** ชี้ DB ใหม่ (schema เดิม, `partialIndexes` preview → ใช้ `deploy` ไม่ใช่ `dev`)
+4. **Backup cron** — `pg_dump` วันละครั้ง → เก็บ**นอกเครื่อง** (S3/R2/Backblaze — ไม่ใช่บน VPS เดียวกัน; เครื่องพัง backup พังด้วย)
+5. **เทส restore จริง** — เอา dump ล่าสุดกู้ขึ้น DB เปล่า ให้ผ่านจริง 1 ครั้ง แล้วตั้งเป็นกิจวัตร
+
+### teaching points
+- **DB ไม่เปิด port ออกเน็ต** — คุยผ่านชื่อ service ในเน็ตเวิร์ก compose เท่านั้น (`app` → `db:5432`); ufw ก็ยังแค่ 22/80/443
+- **pooler หายไป** — Supabase มี Supavisor เพราะ serverless เปิด connection ถี่; บน VPS แอปเป็น process ยาว connection คงที่ → ต่อ postgres ตรงได้ ไม่ต้อง pooler
+- **backup ที่ไม่เคย restore = ไม่มี backup** — cron dump เฉย ๆ ไม่พอ, ต้องพิสูจน์ว่ากู้กลับได้จริง
+- **backup ต้องอยู่คนละเครื่อง** — dump ไว้บน VPS เดียวกัน = เครื่องไฟไหม้ backup ไหม้ด้วย
+- ตอนนี้ VPS มี state จริง (pgdata volume) → เลิกเป็น cattle เต็มตัว, การกู้ = restore backup ไม่ใช่แค่ `compose up`
+
+**commit:** `feat(deploy): self-host Postgres + offsite backup with tested restore`
 
 ---
 
@@ -215,17 +255,24 @@ key หลุดก็ทำได้แค่ deploy — สั่ง shell/อ
 
 ## ✅ Checklist "self-host เป็นแล้ว"
 
+**เฟส 1 (V0–V4):**
 - [ ] ssh ได้ด้วย key เท่านั้น, `ufw status` โชว์แค่ 22/80/443
 - [ ] `docker build` local ผ่าน, image runner ไม่มี `.env`/source ข้างใน
+- [ ] Storage = local + volume — อัปรูปแล้ว redeploy รูปไม่หาย
 - [ ] https เขียว + รู้ว่า cert ต่ออายุเองไม่ต้องทำอะไร
 - [ ] push `main` → เว็บอัพเดตเอง ไม่ได้ ssh
 - [ ] `sudo reboot` → เว็บกลับมาเองใน ~1 นาที
 - [ ] monitor แจ้งเตือนเมื่อดับ (ลองปิด app ให้เตือนจริง 1 ครั้ง)
 - [ ] rollback ได้: deploy sha เก่าแล้วเว็บถอยจริง
 
+**เฟส 2 (V5) — ถ้าย้าย DB เข้า VPS:**
+- [ ] postgres ใน compose, ไม่เปิด port ออกเน็ต (app คุยผ่าน `db:5432`)
+- [ ] ย้ายข้อมูลจาก Supabase สำเร็จ, ตัด Supabase ทิ้ง
+- [ ] backup cron dump ออก**นอกเครื่อง**
+- [ ] **เทส restore จริงผ่าน 1 ครั้ง** (ไม่ใช่แค่มีไฟล์ dump)
+
 ## นอกสโคป (ไว้ Phase ถัดไปถ้าอยากสอนต่อ)
 
-- **Self-host Postgres** — postgres ใน compose + volume + `pg_dump` cron + **เทส restore จริง** (backup ที่ไม่เคย restore = ไม่มี backup) — เป็นบทเรียนดีแต่แยกไป Phase I
 - Blue-green / rolling deploy, load balancer หลายเครื่อง, k8s
 - Observability จริงจัง (Sentry, Grafana) — Phase G นอกสโคปไว้แล้วเช่นกัน
 
