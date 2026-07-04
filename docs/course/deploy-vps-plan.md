@@ -39,6 +39,9 @@
 
 ## Step V0 — เตรียม VPS + hardening (ก่อนแอปเสมอ)
 
+> 📋 **คู่มือ copy-paste จริงสำหรับเครื่อง 66.42.54.32:** [vps-runbook-v0.md](./vps-runbook-v0.md)
+> (ปิด root/password login เขียนไว้ §A–B — ทำทีหลังก่อน V3)
+
 ### เป้าหมาย
 เครื่องเปล่า Ubuntu LTS ที่ ssh ปลอดภัย + firewall เปิดเฉพาะที่ใช้ + docker พร้อม
 
