@@ -24,8 +24,11 @@ import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Suspense } from "react";
 
-const LoginPage = () => {
+// useSearchParams() บังคับให้ทั้ง route bail ออกจาก static prerender
+// → ต้องอยู่ใต้ <Suspense> (next build fail ถ้าไม่ห่อ) — ห่อที่ default export
+const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/menu";
@@ -132,5 +135,11 @@ const LoginPage = () => {
     </div>
   );
 };
+
+const LoginPage = () => (
+  <Suspense>
+    <LoginForm />
+  </Suspense>
+);
 
 export default LoginPage;
