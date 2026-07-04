@@ -43,7 +43,9 @@ curl -I localhost:3000          # ต้อง 200
 | build fail: prisma generate หา schema ไม่เจอ | `prisma/` หรือ `prisma.config.ts` ไม่ถูก copy | `COPY . .` มาก่อน generate (มีแล้ว); เช็ค `.dockerignore` ไม่ได้ตัด `prisma/` |
 | build fail: `next build` OOM | เครื่อง build RAM น้อย | build บน Mac/CI ไม่ใช่ VPS 2GB (นี่คือเหตุผลข้อ V3 build ใน CI) |
 | run: `DATABASE_URL is not set` | ลืม `--env-file` หรือ `.env` ว่าง | ใส่ `--env-file .env`, เช็คค่าใน `.env` |
-| run: ต่อ DB ไม่ได้ / `P1001` | Supabase string ผิด หรือ free tier pause | เช็ค connection string; Supabase ตื่นอยู่ไหม (pause หลัง 7 วันไม่มี traffic) |
+| run: `P1001` ต่อ DB ไม่ได้, host เป็น `localhost`/แปลก ๆ | **container `localhost` = ตัวมันเอง ไม่ใช่ Mac** — ต่อ docker postgres บน host ไม่ได้ | override เป็น `host.docker.internal:5433` (Docker Desktop Mac/Win): `-e DATABASE_URL="...@host.docker.internal:5433/..."` — อย่าแก้ `.env` (dev ใช้ localhost) |
+| run: `P1001` ต่อ Supabase ไม่ได้ | string ผิด หรือ free tier pause | เช็ค connection string; Supabase ตื่นอยู่ไหม (pause หลัง 7 วันไม่มี traffic) |
+| run: อัปรูปพัง / Supabase env ไม่ครบ | `.env` ตั้ง `STORAGE_DRIVER=supabase` แต่ไม่มี `SUPABASE_*` | override `-e STORAGE_DRIVER=local` (เฟส 1 VPS ใช้ local อยู่แล้ว) |
 | 500 ตอนโหลดหน้า query DB | prisma client ไม่ครบใน standalone (ไม่คาดว่าเจอ — client เป็น TS bundled) | ถ้าเจอจริง เพิ่มใน next.config: `outputFileTracingIncludes: { "/*": ["./lib/generated/prisma/**/*"] }` |
 | อัปรูปแล้ว 500 | `STORAGE_DRIVER` ไม่ใช่ local หรือเขียน `public/uploads` ไม่ได้ | ตั้ง `STORAGE_DRIVER=local`; ใน container path เขียนได้อยู่แล้ว (prod ค่อย mount volume—V2) |
 
