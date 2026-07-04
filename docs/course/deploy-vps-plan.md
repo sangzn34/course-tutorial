@@ -231,9 +231,16 @@ Postgres รันใน compose บน VPS เดียวกัน, ตัด 
      environment: [POSTGRES_PASSWORD, POSTGRES_DB, POSTGRES_USER]
      volumes: [pgdata:/var/lib/postgresql/data]
      restart: unless-stopped
-     # ไม่ ports: — DB คุยแค่ในเน็ตเวิร์ก compose, ไม่โผล่ออกเน็ต
+     # แอปคุยผ่านเน็ตเวิร์ก compose (db:5432) — ไม่ต้อง publish port ให้แอป
+     ports: ["127.0.0.1:5432:5432"]   # bind localhost เท่านั้น (สำหรับ admin ผ่าน SSH tunnel) — ไม่โผล่เน็ต, ufw ไม่ต้องยุ่ง
    ```
    `DATABASE_URL` ของแอปชี้ `db:5432` (ชื่อ service), `DIRECT_URL` = ตัวเดียวกัน (ไม่มี pooler บน self-host)
+
+   > **remote เข้า DB จากเครื่องเรา = SSH tunnel ไม่ใช่เปิด firewall:**
+   > ```sh
+   > ssh -L 5433:localhost:5432 deploy@66.42.54.32   # แล้วต่อ DBeaver/studio ไป localhost:5433
+   > ```
+   > ห้ามเปิด 5432 ออกเน็ต (Postgres โผล่เน็ต = โดน brute-force). ufw ยังแค่ 22/80/443 — tunnel วิ่งผ่าน ssh (22) ที่เปิดอยู่แล้ว
 2. **ย้ายข้อมูลจาก Supabase**: `pg_dump` จาก Supabase → `psql`/`pg_restore` เข้า postgres ตัวใหม่ (ทำครั้งเดียว ตอน cutover)
 3. **`migrate deploy`** ชี้ DB ใหม่ (schema เดิม, `partialIndexes` preview → ใช้ `deploy` ไม่ใช่ `dev`)
 4. **Backup cron** — `pg_dump` วันละครั้ง → เก็บ**นอกเครื่อง** (S3/R2/Backblaze — ไม่ใช่บน VPS เดียวกัน; เครื่องพัง backup พังด้วย)
