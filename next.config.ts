@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Docker: แพ็คเฉพาะไฟล์ที่ใช้จริง + server.js เล็ก ๆ (ไม่ต้อง node_modules เต็ม)
+  // → runner stage คัดลอกแค่ .next/standalone + .next/static + public
+  output: "standalone",
+
   // ---- Turbopack mode (`next dev` default ใน Next 16) ----
   // @locator/webpack-loader เติม data-locatorjs attribute (debug-only) ลง JSX.
   // ไม่จำเป็นใน production build → จำกัดด้วย built-in condition ของ Turbopack
