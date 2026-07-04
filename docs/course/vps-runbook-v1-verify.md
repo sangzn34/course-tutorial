@@ -21,9 +21,25 @@ docker images coffee            # SIZE ควรหลักร้อย MB (ไ
 คาดหวัง: 3 stages (deps → build → runner) ผ่าน, จบด้วย `naming to docker.io/library/coffee`
 
 ## 2. run
+
+**2a. ชี้ Supabase** (ตรงกับเฟส 1 จริง — `.env` ต้องมี DATABASE_URL = Supabase):
 ```sh
 docker run --rm --env-file .env -p 3000:3000 coffee
 ```
+
+**2b. ชี้ postgres local บน Mac** (ถ้ายังไม่มี Supabase — เทสเร็ว):
+```sh
+pnpm db:up      # ให้ postgres local รันอยู่ (บน Mac)
+
+# .env ของ dev ชี้ localhost:5433 — ใช้ตรง ๆ ใน container ไม่ได้ (localhost = ตัว container เอง)
+# override เป็น host.docker.internal (Docker Desktop Mac/Win ชี้กลับ host) + storage local
+docker run --rm --env-file .env \
+  -e DATABASE_URL="postgresql://coffee:<password-จาก-env>@host.docker.internal:5433/my_coffee_db?schema=public" \
+  -e STORAGE_DRIVER=local \
+  -p 3000:3000 coffee
+```
+> `-e` วางหลัง `--env-file` = override เฉพาะ 2 ตัวนั้น, ไม่แตะ `.env` (dev ยังใช้ localhost ได้)
+
 คาดหวัง log: `▲ Next.js 16.x` + `✓ Ready in ...` ฟังที่ `0.0.0.0:3000`
 
 ## 3. smoke test (เปิดอีก terminal / browser)
