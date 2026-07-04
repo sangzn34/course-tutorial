@@ -12,6 +12,7 @@ export async function POST(request: Request) {
       name: body.name,
       price: body.price,
       description: body.description,
+      imageUrl: body.imageUrl,
     },
   });
   return Response.json(newProduct);
@@ -25,6 +26,7 @@ export async function GET() {
       name: true,
       price: true,
       description: true,
+      imageUrl: true,
     },
   });
   return Response.json(products);

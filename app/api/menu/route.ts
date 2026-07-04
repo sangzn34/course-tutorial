@@ -8,6 +8,7 @@ export async function GET() {
       name: true,
       price: true,
       description: true,
+      imageUrl: true,
     },
   });
   return Response.json(products);

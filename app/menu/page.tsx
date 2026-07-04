@@ -15,6 +15,7 @@ type MenuItem = {
   price: number;
   description: string;
   available: boolean;
+  imageUrl: string | null;
 };
 
 const MenuPage = () => {
@@ -81,6 +82,7 @@ const MenuPage = () => {
             name={item.name}
             price={item.price}
             description={item.description}
+            imageUrl={item.imageUrl}
             onAddCart={() =>
               addToCart({
                 productId: item.id,
