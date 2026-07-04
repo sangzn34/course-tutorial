@@ -148,11 +148,39 @@
 2. **GitHub Secrets**: `VPS_HOST`, `VPS_SSH_KEY`, `DIRECT_URL` — secret อยู่ที่ CI ไม่อยู่ใน repo
 3. **Rollback** = deploy tag เก่า: `docker compose up -d` ด้วย `image: ...:sha-<ก่อนหน้า>` — image ทุก version ค้างอยู่ใน registry
 
+### `VPS_SSH_KEY` มาจากไหน — สร้าง keypair เฉพาะงาน CI (ห้ามใช้ key ส่วนตัว)
+
+1. **สร้าง keypair ใหม่** (บนเครื่องตัวเอง):
+   ```sh
+   ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/coffee_deploy -N ""
+   # ได้ 2 ไฟล์: coffee_deploy (private) + coffee_deploy.pub (public)
+   # -N "" = ไม่มี passphrase — CI พิมพ์ passphrase ไม่ได้
+   ```
+2. **public → VPS** (ให้ user `deploy` ยอมรับ key นี้):
+   ```sh
+   ssh-copy-id -i ~/.ssh/coffee_deploy.pub deploy@<VPS_IP>
+   # หรือ paste เนื้อ .pub ต่อท้าย /home/deploy/.ssh/authorized_keys
+   ```
+3. **private → GitHub Secret `VPS_SSH_KEY`**: repo → Settings → Secrets and variables → Actions → New secret. paste ทั้งไฟล์ private รวมบรรทัด `-----BEGIN/END-----`
+
+| ไฟล์ | อยู่ที่ | บทบาท |
+|---|---|---|
+| `.pub` (public) | VPS `authorized_keys` | "ยอมรับใครเข้า" |
+| private | GitHub Secret `VPS_SSH_KEY` | "CI ใช้พิสูจน์ตัว" |
+
+**บีบสิทธิ์ key ให้รันได้แค่ deploy** — นำหน้าบรรทัดใน `authorized_keys`:
+```
+command="cd /srv/coffee && docker compose pull && docker compose up -d",no-port-forwarding,no-pty ssh-ed25519 AAAA...
+```
+key หลุดก็ทำได้แค่ deploy — สั่ง shell/อ่านไฟล์อื่นไม่ได้
+
 ### teaching points
 - ลำดับ **migrate → deploy** สำคัญ: โค้ดใหม่เจอ schema เก่า = พัง; schema ใหม่กับโค้ดเก่า = มักรอด (additive migration)
 - tag ด้วย commit sha ไม่ใช่ `latest` อย่างเดียว — `latest` rollback ไม่ได้
 - นี่คือสิ่งเดียวกับที่ Vercel ทำตอน push (Phase G Step 2) — ต่างแค่เราเขียน pipeline เอง
 - zero-downtime จริงจัง (blue-green, health-gate) **ยังไม่ทำ** — restart หลักวินาทีรับได้ที่สเกลนี้; เพดานอยู่ตรงนี้ อัพเกรดเป็น rolling/blue-green เมื่อ downtime เริ่มมีราคา
+- **key ส่วนตัว vs key CI**: key ที่คน ssh ทุกวันมีสิทธิ์เต็ม + อยู่หลายเครื่อง; key CI สร้างเฉพาะงาน จำกัดสิทธิ์ + revoke ตัวเดียวจบ (ลบบรรทัดใน `authorized_keys`) โดยไม่กระทบ ssh ส่วนตัว
+- private key **ห้ามเข้า repo** — อยู่ใน Secret เท่านั้น (encrypted, workflow log ไม่โชว์ค่า secret)
 
 **commit:** `ci(deploy): build → GHCR → migrate → ssh deploy`
 
