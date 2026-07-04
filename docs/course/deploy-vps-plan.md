@@ -1,5 +1,7 @@
 # Phase H — Deploy ทางเลือกที่ 2: VPS self-host (แผนการสอน)
 
+> 🚀 **จะลงมือจริง:** [deploy-golive-checklist.md](./deploy-golive-checklist.md) — ทุกคำสั่งเรียงลำดับ A→F จนเว็บขึ้น (doc นี้เน้น concept/ทำไม)
+
 **Branch:** `feat/deploy-vps` → merge `prep/deploy` (ต่อจาก Phase G)
 **Sessions:** ประมาณ 3–4 sessions (V0+V1 / V2 / V3+V4 / V5)
 **สถานะ:** แผน — ยังไม่ลงมือ. แต่ละ step = 1 commit
@@ -160,8 +162,9 @@
    1. **build**: `docker build` → push `ghcr.io/<user>/coffee:sha-<commit>` + `:latest` (login ด้วย `GITHUB_TOKEN` ฟรี)
    2. **migrate**: `pnpm db:deploy:ci` — env จาก GitHub Secrets (`DIRECT_URL` ชี้ Supabase direct) — **migrate ก่อนสลับ app เสมอ**
    3. **deploy**: ssh เข้า VPS (key ใน Secrets) → `docker compose pull && docker compose up -d`
-2. **GitHub Secrets**: `VPS_HOST`, `VPS_SSH_KEY`, `DIRECT_URL` — secret อยู่ที่ CI ไม่อยู่ใน repo
-3. **Rollback** = deploy tag เก่า: `docker compose up -d` ด้วย `image: ...:sha-<ก่อนหน้า>` — image ทุก version ค้างอยู่ใน registry
+2. **GitHub Secrets** (4 ตัว): `DATABASE_URL`, `DIRECT_URL` (migrate), `VPS_HOST`, `VPS_SSH_KEY` (deploy) — อยู่ที่ CI ไม่อยู่ใน repo
+3. **GHCR package → public** — หลัง build ครั้งแรก: Packages → `course-tutorial` → settings → Change visibility → Public (ไม่งั้น VPS pull ไม่ได้)
+4. **Rollback** = deploy tag เก่า: `IMAGE=...:sha-<ก่อนหน้า> docker compose up -d` — image ทุก version ค้างใน registry
 
 ### `VPS_SSH_KEY` มาจากไหน — สร้าง keypair เฉพาะงาน CI (ห้ามใช้ key ส่วนตัว)
 
