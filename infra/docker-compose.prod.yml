@@ -9,7 +9,7 @@
 
 services:
   app:
-    image: ${IMAGE:-ghcr.io/OWNER/coffee:latest} # V3 CI push image; แก้ OWNER หรือ set $IMAGE
+    image: ${IMAGE:-ghcr.io/sangzn34/course-tutorial:latest} # CI push :latest+:sha; rollback = set IMAGE=...:sha-xxx
     container_name: coffee-app
     env_file: /srv/coffee/.env
     environment:
