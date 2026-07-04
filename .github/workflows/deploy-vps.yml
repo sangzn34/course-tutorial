@@ -1,10 +1,12 @@
 # V3 — CI/CD: push main → build → migrate → deploy VPS (ไม่ ssh มือ ไม่ build บน VPS)
 #
-# GitHub Secrets ที่ต้องตั้ง (repo → Settings → Secrets and variables → Actions):
-#   DATABASE_URL   — Supabase pooled (6543)   ── ใช้ตอน migrate
-#   DIRECT_URL     — Supabase direct (5432)    ── migrate จริงวิ่งผ่านตัวนี้
-#   VPS_HOST       — 66.42.54.32
+# repo → Settings → Secrets and variables → Actions
+# Secrets (มีความลับ — เปิดดูค่าไม่ได้):
+#   DATABASE_URL   — Supabase pooled (6543)  ── มีรหัส DB → ต้อง Secret
+#   DIRECT_URL     — Supabase direct (5432)  ── มีรหัส DB → ต้อง Secret
 #   VPS_SSH_KEY    — private key ของ user deploy (ตรงกับ pubkey ใน authorized_keys)
+# Variables (ไม่ลับ — เปิดดูได้):
+#   VPS_HOST       — 66.42.54.32 (แค่ IP)
 #
 # ต้องทำครั้งเดียวก่อน: §A (user deploy + key บน VPS) · วาง infra/* + .env ที่ /srv/coffee
 # GHCR package: ตั้งเป็น public (Packages → package → settings → public) ไม่งั้น VPS pull ไม่ได้
@@ -67,7 +69,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: appleboy/scp-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
+          host: ${{ vars.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
           source: 'infra/docker-compose.prod.yml,infra/Caddyfile'
@@ -75,7 +77,7 @@ jobs:
           strip_components: 1 # ตัด infra/ ออก → ไฟล์ลงตรง /srv/coffee/
       - uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
+          host: ${{ vars.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
