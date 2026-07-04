@@ -77,13 +77,13 @@ ssh -i ~/.ssh/coffee_deploy deploy@66.42.54.32
    # ssh deploy@66.42.54.32 แล้ว:
    cat > /srv/coffee/.env <<'EOF'
    DATABASE_URL=<Supabase pooled 6543 ?pgbouncer=true>
-   DIRECT_URL=<Supabase direct 5432>
    JWT_SECRET=<openssl rand -base64 32>
    STORAGE_DRIVER=local
    EOF
    chmod 600 /srv/coffee/.env
    ```
    > `JWT_SECRET`: รัน `openssl rand -base64 32` บนเครื่องไหนก็ได้ เอาค่ามาใส่
+   > **ไม่ต้องใส่ `DIRECT_URL`** ในไฟล์นี้ — app runtime ใช้แค่ `DATABASE_URL`; `DIRECT_URL` ใช้ตอน migrate ซึ่งรันบน CI (GitHub var)
 2. **compose + Caddyfile**: CI (deploy job) `scp` ให้อัตโนมัติตอน push — **ไม่ต้องวางเอง**. (ถ้าอยากเทสก่อน push: `scp infra/docker-compose.prod.yml infra/Caddyfile deploy@66.42.54.32:/srv/coffee/`)
 3. **trigger pipeline**: push main (ข้อ C.1) หรือ Actions → Deploy VPS → **Run workflow**
 4. ดู pipeline: repo → **Actions** → job `build → migrate → deploy` เขียวครบ
