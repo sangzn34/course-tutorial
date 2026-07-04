@@ -127,11 +127,13 @@
    ```
 2. **Caddyfile** — ทั้งไฟล์มีเท่านี้:
    ```
-   coffee.yourdomain.com {
+   coffee.successo-studio.com {
        reverse_proxy app:3000
    }
    ```
-3. **DNS**: A record `coffee.yourdomain.com` → IP ของ VPS (เทียบบทเรียน Phase G: Vercel ชี้ CNAME ไป infra เขา — VPS ชี้ IP เครื่องเราตรง ๆ)
+3. **DNS ที่ Cloudflare**: **A record** `coffee` → `66.42.54.32` (VPS ชี้ IP ตรง ๆ; Vercel ชี้ CNAME ไป infra เขา)
+   - ⚠️ **DNS only (เมฆเทา) ไม่ใช่เมฆส้ม** — Caddy ขอ Let's Encrypt ผ่าน port 80 ตรง; เมฆส้มบัง HTTP-01 challenge → Caddy ขอ cert ไม่ได้ (ถ้าจะเปิดส้มต้องสลับไปใช้ DNS challenge — ซับซ้อนกว่า, ไว้ทีหลัง)
+   - สลับ `coffee` ระหว่าง Vercel (CNAME) กับ VPS (A) ได้ทีละที่ — เทส VPS ก็ตั้ง A ชี้ IP
 4. `.env` บนเครื่อง: `/srv/coffee/.env`, `chmod 600`. เฟส 1: `DATABASE_URL`/`DIRECT_URL` = Supabase, `JWT_SECRET`, `STORAGE_DRIVER=local` (ตัด `SUPABASE_*` ออก)
 5. `docker compose up -d` → Caddy ขอ cert Let's Encrypt เองตอน request แรก
 
