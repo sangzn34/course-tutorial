@@ -59,7 +59,7 @@ echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
 **บนเครื่องเรา** (สร้างคู่กุญแจเฉพาะงาน — ดู [deploy-vps-plan.md](./deploy-vps-plan.md) V3):
 ```sh
-ssh-keygen -t ed25519 -C "ci-deploy" -f ~/.ssh/coffee_deploy -N ""
+ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/coffee_deploy -N ""
 cat ~/.ssh/coffee_deploy.pub          # copy บรรทัดนี้ไว้
 ```
 
