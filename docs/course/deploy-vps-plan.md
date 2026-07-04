@@ -90,6 +90,7 @@
    ```
 3. `.dockerignore`: `node_modules`, `.next`, `.env*`, `docs`
 4. ทดสอบ local: `docker build -t coffee .` แล้ว `docker run --env-file .env -p 3000:3000 coffee`
+   → 📋 runbook verify ละเอียด (expected output + gotcha + วิธีแก้): [vps-runbook-v1-verify.md](./vps-runbook-v1-verify.md)
 
 ### teaching points
 - **multi-stage ทำไม**: stage สุดท้ายไม่มี devDependencies, ไม่มี source, ไม่มี secret — image เล็กลงจาก ~1GB เหลือหลักร้อย MB
