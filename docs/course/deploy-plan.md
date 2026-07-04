@@ -1,5 +1,7 @@
 # Phase G — Deploy: Supabase + Vercel + Domain (แผนการสอน)
 
+> 💡 **อ่านคู่:** [deploy-lessons.md](./deploy-lessons.md) — gotcha ที่เจอจริง (สิ่งที่ dev ไม่บอก) รวบไว้ที่เดียว
+
 **Branch:** `prep/deploy` (base = `teach/2026-06-27`)
 **Sessions:** ประมาณ 2 sessions
 **สถานะ:** แผน — ยังไม่ลงมือ. แต่ละ step = 1 commit (สอนตามลำดับ)
