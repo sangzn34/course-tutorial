@@ -1,28 +1,36 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const ALLOWED = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-  "application/pdf",
-];
 const MAX_BYTES = 5 * 1024 * 1024; // 5MB
 
 export class UploadError extends Error {}
 
+// ตรวจชนิดจาก magic bytes (ลายเซ็นไฟล์จริง) ไม่เชื่อ file.type จาก client —
+// PDF ที่ browser ส่งมาเป็น application/octet-stream ก็ผ่านถ้าเนื้อเป็น PDF จริง,
+// ขณะที่ไฟล์มั่ว ๆ ที่อ้างเป็น octet-stream จะไม่ตรงลายเซ็น = ถูกปฏิเสธ
+export function sniff(b: Buffer): { type: string; ext: string } | null {
+  const s = (i: number, j: number) => b.subarray(i, j).toString("latin1");
+  if (b.length >= 4 && s(0, 4) === "%PDF") return { type: "application/pdf", ext: "pdf" };
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff)
+    return { type: "image/jpeg", ext: "jpg" };
+  if (b.length >= 8 && s(0, 8) === "\x89PNG\r\n\x1a\n")
+    return { type: "image/png", ext: "png" };
+  if (b.length >= 12 && s(0, 4) === "RIFF" && s(8, 12) === "WEBP")
+    return { type: "image/webp", ext: "webp" };
+  return null;
+}
+
 export async function saveImage(file: File) {
-  if (!ALLOWED.includes(file.type))
-    throw new UploadError("รองรับเฉพาะ jpeg/png/webp/pdf");
   if (file.size > MAX_BYTES) throw new UploadError("ไฟล์ใหญ่เกิน 5MB");
 
-  const ext = file.type.split("/")[1];
-  const filename = `${crypto.randomUUID()}.${ext}`;
   const bytes = Buffer.from(await file.arrayBuffer());
+  const kind = sniff(bytes);
+  if (!kind) throw new UploadError("รองรับเฉพาะ jpeg/png/webp/pdf");
+
+  const filename = `${crypto.randomUUID()}.${kind.ext}`;
 
   if (process.env.STORAGE_DRIVER === "supabase") {
-    return saveToSupabase(filename, bytes, file.type);
+    return saveToSupabase(filename, bytes, kind.type);
   } else {
     return saveToLocal(filename, bytes);
   }
