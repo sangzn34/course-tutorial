@@ -1,0 +1,34 @@
+# Migrate Supabase on push (สำหรับ Vercel-first — Vercel ไม่ migrate เอง)
+# รันเฉพาะตอน schema/migrations เปลี่ยน · migrate deploy = idempotent (ไม่มี pending ก็ผ่าน)
+#
+# Variables ที่ใช้ (teaching split): vars.DATABASE_URL, vars.DIRECT_URL
+#
+# ⚠️ non-backward-compatible (breaking) migration: workflow นี้รัน "ขนาน" กับ Vercel deploy
+#    → ไม่การันตีว่า migrate เสร็จก่อน code ใหม่ live. สำหรับ breaking change เลือก:
+#    (ก) expand-contract — แตกเป็น additive หลาย deploy (แนะนำ), หรือ
+#    (ข) ทำมือ: pnpm db:deploy → verify → ค่อย push code (อย่าพึ่ง auto), หรือ
+#    (ค) gate Vercel: ปิด Vercel auto-deploy + ยิง Vercel Deploy Hook หลัง job นี้ผ่าน
+
+name: Migrate DB
+
+on:
+  push:
+    branches: [main]
+    paths: ['prisma/migrations/**', 'prisma/schema.prisma']
+  workflow_dispatch: {}
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:deploy:ci # prisma migrate deploy (ไม่ใช่ dev — partialIndexes preview)
+        env:
+          DATABASE_URL: ${{ vars.DATABASE_URL }}
+          DIRECT_URL: ${{ vars.DIRECT_URL }} # prisma.config ใช้ DIRECT_URL ?? DATABASE_URL
