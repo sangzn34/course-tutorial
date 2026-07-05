@@ -11,13 +11,14 @@
 1. [supabase.com](https://supabase.com) → New project → เลือก region **Singapore**, ตั้ง DB password (**ไม่มี `@` `#` `:`** ไม่งั้นต้อง URL-encode — ดู [teach/2026-07-04](../teach/2026-07-04.md))
 2. Project → **Settings → Database → Connection string** เก็บ 2 ค่า:
    - **Transaction pooler** (port `6543`) → นี่คือ `DATABASE_URL` (เติม `?pgbouncer=true` ท้าย)
-   - **Direct connection** (port `5432`) → นี่คือ `DIRECT_URL`
+   - **Session pooler** (port `5432`) → นี่คือ `DIRECT_URL`
+   > ⚠️ **อย่าใช้ Direct connection** (`db.<ref>.supabase.co:5432`) — เป็น **IPv6-only**; เน็ต/ISP ส่วนใหญ่ (และ Vercel/CI) ต่อไม่ได้ → `P1001 Can't reach database server` (นี่คือ *ต่อ server ไม่ได้* ไม่ใช่รหัสผิด). **Session pooler** (`...pooler.supabase.com:5432`) เป็น IPv4 + รองรับ migrate ครบ. Direct ใช้ได้เฉพาะเน็ตที่มี IPv6.
 3. รัน migration ขึ้น Supabase จากเครื่องเรา (ครั้งเดียว):
    ```sh
    # สร้าง .env.supabase (gitignored) ใส่ 2 ค่าข้างบน
    cat > .env.supabase <<'EOF'
-   DATABASE_URL="<pooled 6543 ?pgbouncer=true>"
-   DIRECT_URL="<direct 5432>"
+   DATABASE_URL="<transaction pooler 6543 ?pgbouncer=true>"
+   DIRECT_URL="<session pooler 5432>"
    EOF
    pnpm db:deploy          # cross-env ENV_FILE=.env.supabase prisma migrate deploy
    ```
@@ -52,7 +53,7 @@ ssh -i ~/.ssh/coffee_deploy deploy@66.42.54.32
    | `VPS_SSH_KEY` | **Secret** | เนื้อ private key ทั้งไฟล์ | `pbcopy < ~/.ssh/coffee_deploy` |
    | `VPS_HOST` | **Variable** | `66.42.54.32` | — |
    | `DATABASE_URL` | **Variable** ⚠️ | Supabase pooled 6543 | A.2 |
-   | `DIRECT_URL` | **Variable** ⚠️ | Supabase direct 5432 | A.2 |
+   | `DIRECT_URL` | **Variable** ⚠️ | Supabase session pooler 5432 | A.2 |
    > **teaching shortcut:** `DATABASE_URL`/`DIRECT_URL` เป็น **Variable** เพื่อสอน (อ่านค่าเห็น connection string จริง) — แต่มันมีรหัส DB!
    > ยอมได้เพราะ DB เรียนทิ้งได้. **prod จริง/มีข้อมูลจริง = ย้ายเป็น Secret + rotate รหัส** (แล้วแก้ workflow `vars.*` → `secrets.*`)
    > **`VPS_SSH_KEY` เป็น Secret เสมอ** — private key ห้ามเป็น Variable เด็ดขาด. ใส่ผิดแท็บ = workflow หาไม่เจอ (อ่าน `secrets.VPS_SSH_KEY` + `vars.DATABASE_URL` ฯลฯ)
@@ -92,7 +93,8 @@ ssh -i ~/.ssh/coffee_deploy deploy@66.42.54.32
 > **เช็ค Secret ถูกไหม? เปิดดูค่าไม่ได้ (Secrets อ่านกลับไม่ได้) — ดูจาก job ที่แดงแทน:**
 > | job แดง + error | Secret ที่ผิด |
 > |---|---|
-> | `migrate`: auth failed / `P1001` | `DATABASE_URL` / `DIRECT_URL` |
+> | `migrate`: `P1001` (reach ไม่ได้) | ใช้ Direct connection (IPv6)? → เปลี่ยน `DIRECT_URL` เป็น **session pooler** (A.2) |
+> | `migrate`: auth failed | รหัสใน `DATABASE_URL`/`DIRECT_URL` ผิด/ยังไม่ URL-encode |
 > | `deploy`: `Permission denied (publickey)` | `VPS_SSH_KEY` (หรือ pubkey ยังไม่อยู่บน VPS §B) |
 > | `deploy`: ต่อ host ไม่ได้ / timeout | `VPS_HOST` |
 > ไม่ชัวร์ = **Update secret (paste ทับ)** ปลอดภัยเสมอ · ต้นฉบับอยู่ที่ `cat ~/.ssh/coffee_deploy` / `.env.supabase`
