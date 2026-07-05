@@ -31,6 +31,8 @@ ENV PORT=3000
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
+# uploads ต้อง node เขียนได้ (STORAGE_DRIVER=local): volume ใหม่ที่ mount ทับ dir นี้จะ inherit ownership node
+RUN mkdir -p /app/public/uploads && chown node:node /app/public/uploads
 USER node
 EXPOSE 3000
 CMD ["node", "server.js"]

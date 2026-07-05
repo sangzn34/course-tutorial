@@ -11,9 +11,7 @@ services:
   app:
     image: ${IMAGE:-ghcr.io/sangzn34/course-tutorial:latest} # CI push :latest+:sha; rollback = set IMAGE=...:sha-xxx
     container_name: coffee-app
-    env_file: /srv/coffee/.env
-    environment:
-      - STORAGE_DRIVER=local # กันพลาด: บังคับ local (VPS disk) แม้ .env ลืมตั้ง
+    env_file: /srv/coffee/.env # STORAGE_DRIVER + SUPABASE_* มาจากที่นี่ (อย่า override ใน environment: — มันทับ .env)
     volumes:
       - uploads:/app/public/uploads # รูปอยู่บน disk — redeploy ไม่หาย
     expose:
