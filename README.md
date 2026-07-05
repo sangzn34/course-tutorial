@@ -1,3 +1,11 @@
+# ☕ Coffee Shop — Dev Workshop
+
+- **Live app:** https://coffee.successo-studio.com
+- **Slides (สอน Next.js 16):** https://sangzn34.github.io/course-tutorial/
+- **บทเรียน / แผน deploy:** [`docs/course/`](docs/course/) · [`docs/teach/`](docs/teach/)
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
