@@ -14,9 +14,10 @@
 name: Deploy VPS
 
 on:
-  push:
-    branches: [main] # deploy จาก main เท่านั้น
-  workflow_dispatch: {} # กดรันเองได้จากหน้า Actions
+  # ⏸️ ปิด auto-deploy ชั่วคราว — ใช้ Vercel ก่อน. เปิดคืน: uncomment 2 บรรทัดล่าง
+  # push:
+  #   branches: [main]        # deploy จาก main เท่านั้น
+  workflow_dispatch: {} # ยังรันมือได้ (Actions → Deploy VPS → Run workflow)
 
 env:
   IMAGE: ghcr.io/sangzn34/course-tutorial
