@@ -383,11 +383,72 @@
   </div>
 </section>
 
-<!-- ░░ SLIDE 12 — GATE UI ░░ -->
-<section data-label="gate UI" data-screen-label="12" data-speaker-notes="ฝั่ง UI ใช้ useMe อ่าน /me แล้วซ่อนปุ่ม admin กับสลับ login/logout ตาม session แต่ย้ำว่าการซ่อนใน UI เป็นแค่ UX ไม่ใช่ security ใครเปิด devtools ก็เห็น ด่านจริงยังเป็น API guard">
+<!-- ░░ SLIDE 12 — withRole REFACTOR ░░ -->
+<section data-label="withRole" data-screen-label="12" data-speaker-notes="ปัญหาคือทุก route ต้องเขียน if auth instanceof Response return auth เอง ลืมเมื่อไหร่ route เปิดโล่งไม่มี error เตือน วิธีแก้คือย้าย guard เข้า wrapper withRole ห่อ handler แล้วส่ง session ที่การันตีแล้วเข้าไปให้เลย handler สะอาดขึ้นและลืมไม่ได้">
   <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
       <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">12</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Authorization · Refactor</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">withRole — เลิกเช็ค <code style="font-family:'IBM Plex Mono',monospace;color:#e0b15a;font-size:44px;">instanceof Response</code> ทุก route</h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 34%;display:flex;flex-direction:column;gap:24px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#e0b15a;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><b style="color:#e0b15a;font-weight:600;">หนี้:</b> ลืม <code style="font-family:'IBM Plex Mono',monospace;color:#e0b15a;">if instanceof</code> = route เปิดโล่ง ไม่มี error เตือน</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;">ย้าย guard เข้า <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">wrapper</code> → handler สะอาดล้วน</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">session</code> แถมมา typed — ไม่ใช่ <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">| null</code></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:28px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">throw</code> เฉย ๆ ไม่ได้ — Next จับเป็น <b style="color:#e0b15a;font-weight:600;">500</b></span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#73daca;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">lib/auth/session.ts + route.ts</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.6;white-space:pre;color:#c0caf5;overflow:hidden;">{{ codeWith }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;">guard ที่ต้องจำเขียนทุกที่ = หนี้ — <b style="color:#73daca;font-weight:600;">ย้ายเข้า wrapper ให้ลืมไม่ได้</b></span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 13 — DECORATOR? ░░ -->
+<section data-label="decorator?" data-screen-label="13" data-speaker-notes="withRole ที่เพิ่งทำคือ decorator แบบ functional แล้ว ต่างแค่ไม่มี at sign อยากได้ at requireRole จริงต้องเขียน route เป็น class เพราะ decorator ตกแต่งได้แค่ class กับ method แต่ route ของ Next เป็น function export ลอย ต้อง bind method ออกมาเอง บวก Turbopack SWC เสี่ยง build แตก คุ้มตอนมีสิบกว่า route หรือย้าย NestJS">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">13</span>
+      <span style="width:28px;height:2px;background:#2a2f45;"></span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Refactor · Decorator</span>
+    </div>
+    <h2 style="font-size:54px;line-height:1.12;font-weight:700;color:#e6eaff;margin:0;letter-spacing:-0.5px;">แล้ว <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;font-size:46px;">@requireRole</code> ล่ะ? — <span style="color:#e0b15a;">ไม่คุ้มที่นี่</span></h2>
+
+    <div style="display:flex;gap:44px;flex:1;min-height:0;margin-top:34px;">
+      <div style="flex:0 0 40%;display:flex;flex-direction:column;gap:22px;padding-top:6px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">✓</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">withRole</code> = decorator แล้ว (functional) — ต่างแค่ไม่มี <code style="font-family:'IBM Plex Mono',monospace;color:#73daca;">@</code></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#e0b15a;font-size:28px;line-height:1.35;">✗</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;"><code style="font-family:'IBM Plex Mono',monospace;color:#e0b15a;">@</code> ตกแต่งได้แค่ class/method — route Next = <b style="color:#e6eaff;font-weight:600;">function export ลอย</b></span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#e0b15a;font-size:28px;line-height:1.35;">✗</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">ต้องเขียน class + <code style="font-family:'IBM Plex Mono',monospace;color:#e0b15a;">bind</code> export เอง — โค้ดโตกว่าเดิม</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#e0b15a;font-size:28px;line-height:1.35;">✗</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">Turbopack/SWC legacy decorator → เสี่ยง <code style="font-family:'IBM Plex Mono',monospace;color:#e0b15a;">next build</code> แตก</span></div>
+        <div style="display:flex;gap:14px;align-items:flex-start;"><span style="color:#73daca;font-size:28px;line-height:1.35;">▸</span><span style="font-size:27px;line-height:1.4;color:#c5cce6;">คุ้มตอน <b style="color:#e6eaff;font-weight:600;">~10+ route</b> หรือย้าย NestJS (decorator native)</span></div>
+      </div>
+      <div style="flex:1;min-width:0;background:#1a1b26;border:1px solid #2a2f45;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px 24px;border-bottom:1px solid #2a2f45;"><span style="width:11px;height:11px;border-radius:50%;background:#e0b15a;"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#8990b3;">ราคาของ @ syntax</span></div>
+        <pre style="margin:0;padding:26px 30px;font-family:'IBM Plex Mono',monospace;font-size:24px;line-height:1.6;white-space:pre;color:#c0caf5;overflow:hidden;">{{ codeDeco }}</pre>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:22px;border-top:1px solid #2a2f45;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:26px;">⭐</span>
+      <span style="font-size:27px;color:#cdd6f4;line-height:1.35;"><b style="color:#73daca;font-weight:600;">withRole คือ decorator ที่ต้องการ</b> — ไม่แตะ tsconfig ไม่เสี่ยง build</span>
+    </div>
+  </div>
+</section>
+
+<!-- ░░ SLIDE 14 — GATE UI ░░ -->
+<section data-label="gate UI" data-screen-label="14" data-speaker-notes="ฝั่ง UI ใช้ useMe อ่าน /me แล้วซ่อนปุ่ม admin กับสลับ login/logout ตาม session แต่ย้ำว่าการซ่อนใน UI เป็นแค่ UX ไม่ใช่ security ใครเปิด devtools ก็เห็น ด่านจริงยังเป็น API guard">
+  <div style="width:100%;height:100%;box-sizing:border-box;padding:70px 92px 60px;display:flex;flex-direction:column;background:#15161e;font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">14</span>
       <span style="width:28px;height:2px;background:#2a2f45;"></span>
       <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Authorization · UI</span>
     </div>
@@ -412,11 +473,11 @@
   </div>
 </section>
 
-<!-- ░░ SLIDE 13 — TAKEAWAYS ░░ -->
-<section data-label="สรุป Takeaways" data-screen-label="13" data-speaker-notes="ปิดท้ายด้วย 6 ข้อที่ต้องจำ: hash เสมอ, httpOnly, error เดียว, fail-closed secret, AuthN ต่างจาก AuthZ, และด่านจริงคือ API ไม่ใช่ UI">
+<!-- ░░ SLIDE 15 — TAKEAWAYS ░░ -->
+<section data-label="สรุป Takeaways" data-screen-label="15" data-speaker-notes="ปิดท้ายด้วย 6 ข้อที่ต้องจำ: hash เสมอ, httpOnly, error เดียว, fail-closed secret, AuthN ต่างจาก AuthZ, และด่านจริงคือ API ไม่ใช่ UI">
   <div style="width:100%;height:100%;box-sizing:border-box;padding:80px 100px;display:flex;flex-direction:column;background:radial-gradient(120% 120% at 0% 100%, #1b1d2b 0%, #15161e 45%);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;color:#cdd6f4;overflow:hidden;">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">13</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#73daca;font-weight:600;">15</span>
       <span style="width:28px;height:2px;background:#2a2f45;"></span>
       <span style="font-family:'IBM Plex Mono',monospace;font-size:24px;color:#787c99;letter-spacing:2px;text-transform:uppercase;">Takeaways</span>
     </div>
@@ -561,6 +622,31 @@ export async function GET() {
 )}
 {user ? <LogoutButton /> : <LoginLink />}`;
 
+    const codeWith = `// lib/auth/session.ts — guard ย้ายเข้า wrapper
+export function withRole(role, handler) {
+  return async (req) => {
+    const s = await getSession()
+    if (!s) return Response.json(
+      { message: "Unauthorized" }, { status: 401 })
+    if (s.role !== role) return Response.json(
+      { message: "Forbidden" }, { status: 403 })
+    return handler(req, s)   // ผ่าน → ส่ง session ให้เลย
+  }
+}
+
+// route.ts — if instanceof หายไป
+export const POST = withRole("ADMIN",
+  async (req, s) => Response.json(await create(req)))`;
+
+    const codeDeco = `// tsconfig: "experimentalDecorators": true
+class ProductRoute {
+  @requireRole("ADMIN")
+  async POST(req, s) { /* ... */ }
+}
+const r = new ProductRoute()
+// Next อ่าน export ไม่อ่าน class → bind เอง
+export const POST = r.POST.bind(r)`;
+
     return {
       code3: this.hl(code3),
       code4: this.hl(code4),
@@ -571,6 +657,8 @@ export async function GET() {
       code10: this.hl(code10),
       code11: this.hl(code11),
       code12: this.hl(code12),
+      codeWith: this.hl(codeWith),
+      codeDeco: this.hl(codeDeco),
     };
   }
 }
